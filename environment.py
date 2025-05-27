@@ -24,15 +24,15 @@ class Gridworld:
     # x will represent the horizontal position (0 on the left), and y will represent
     # the vertical position (0 on the bottom)
     # Size of the grid world is fixed at 10x10 for now.
-    def __init__(self, rewards, terminalStates):
+    def __init__(self, rewards, terminal_states):
         self.rewards = rewards
-        self.terminalStates = terminalStates
+        self.terminal_states = terminal_states
 
-    # Return whether or not taking action `a` from state `s` is valid.
+    # Return whether or not taking action `a` in state `s` is valid.
     # a is an invalid action if it would cause the agent to go out of bounds.
     # `a` is a member of the Enum `Actions`, and `s` is the state, 
     # which is a tuple (x,y) representing the grid coordinate.
-    def isValidAction(a, s):
+    def is_valid_action(self, a, s):
         if (s[1] == 0 and a == Actions.DOWN):
             return False
         elif (s[1] == 9 and a == Actions.UP):
@@ -47,30 +47,33 @@ class Gridworld:
     # Return the new state s' from taking action `a` in state `s`, or throw
     # IllegalActionException if the action is invalid. Throw TerminalStateException
     # if attempting to perform an action from a terminal state.
-    def nextState(a, s):
-        if (isValidAction(a, s) == False):
-            raise IllegalActionException()
-        if (s in terminalStates):
+    def next_state(self, a, s):
+        if (s in self.terminal_states):
             raise TerminalStateException()
+        if (not self.is_valid_action(a, s)):
+            raise IllegalActionException()
         
         if (a == Actions.LEFT):
-            s[0] = s[0] - 1
+            return (s[0]-1, s[1])
         elif (a == Actions.RIGHT):
-            s[0] = s[0] + 1
+            return (s[0]+1, s[1])
         elif (a == Actions.UP):
-            s[1] = s[1] + 1
+            return (s[0], s[1]+1)
         elif (a == Actions.DOWN):
-            s[1] = s[1] - 1
+            return (s[0], s[1]-1)
         
         return s
 
-    # Reward function
+    # Returns the reward from taking action `a` in state `s`
     def reward(self, a, s):
-        if (isValidAction(a, s) == False):
+        if (s in self.terminal_states):
+            raise TerminalStateException()
+        if (not self.is_valid_action(a, s)):
             raise IllegalActionException()
 
-        if nextState(a, s) in rewards:
-            return rewards.get(s)
+        next_state = self.next_state(a, s)
+        if next_state in self.rewards:
+            return self.rewards.get(next_state)
         else:
             return 0
     
