@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import environment
-from environment import Actions, IllegalActionException, TerminalStateException
-
+from environment import Actions, Gridworld, IllegalActionException, TerminalStateException
 
 def test_gridworld_straight_line():
 
@@ -34,5 +33,3 @@ def test_gridworld_straight_line():
     plt.xlabel("Timestep")
     plt.ylabel("Reward")
     plt.show()
-
-test_gridworld_straight_line()
