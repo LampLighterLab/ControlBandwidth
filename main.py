@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import environment
 from environment import Actions, Gridworld, IllegalActionException, TerminalStateException
+from value_estimator import MonteCarlo
+from agent import Agent
 
 def test_gridworld_straight_line():
 
@@ -33,3 +35,29 @@ def test_gridworld_straight_line():
     plt.xlabel("Timestep")
     plt.ylabel("Reward")
     plt.show()
+
+def test_monte_carlo():
+    rewards = {
+            (0,3):7,
+            (0,8):5,
+            (5,0):11,
+            (3,1):6
+            }
+    terminal_states = [
+        (0,8),
+        (7,0)
+        ]
+    env = environment.Gridworld(rewards, terminal_states)
+
+    policy = dict()
+    my_agent = Agent(policy, (0, 0))
+    for i in range(10):
+        for j in range(10):
+            #policy[(i,j)] = my_agent.generate_random_action
+            my_agent.update_policy((i, j), Actions.RIGHT)
+    
+    mc = MonteCarlo(my_agent, env, 1)
+    mc.episode()
+    
+
+test_monte_carlo()

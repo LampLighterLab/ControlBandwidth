@@ -11,9 +11,10 @@ class MonteCarlo:
         self.env = environment
         self.visits = dict()
 
-
     # Returns the return value from a list `seq` of rewards, starting at the nth item in `seq`
     def return_from_sequence(self, seq, n):
+        if (n == len(seq)):
+            return 0
         return_val = seq[n]
         discount_factor = 1
         for i in range(n+1, len(seq)):
@@ -45,6 +46,8 @@ class MonteCarlo:
                 else:
                     self.visits[states[i]] = self.visits[states[i]] + 1
                     self.agent.values[states[i]] += (episode_return - self.agent.values[states[i]])*(1/self.visits[states[i]])
+                print(states[i])
+                print(self.agent.values[states[i]])
                 
 class TDLambda:
 
