@@ -46,9 +46,7 @@ class MonteCarlo:
                 else:
                     self.visits[states[i]] = self.visits[states[i]] + 1
                     self.agent.values[states[i]] += (episode_return - self.agent.values[states[i]])*(1/self.visits[states[i]])
-                print(states[i])
-                print(self.agent.values[states[i]])
-                
+
 class TDLambda:
 
     def __init__(self):

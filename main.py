@@ -5,6 +5,20 @@ from environment import Actions, Gridworld, IllegalActionException, TerminalStat
 from value_estimator import MonteCarlo
 from agent import Agent
 
+def plot_values(value_func):
+    arr = np.zeros((10, 10))
+    for i in range(10):
+        for j in range(10):
+            arr[i, j] = value_func((i,j))
+
+    plt.imshow(arr, origin="lower")
+    plt.colorbar()
+    plt.xlabel("x-coordinate")
+    plt.ylabel("y-coordinate")
+    plt.title("Value function")
+    plt.show()
+
+
 def test_gridworld_straight_line():
 
     rewards = {
@@ -38,26 +52,22 @@ def test_gridworld_straight_line():
 
 def test_monte_carlo():
     rewards = {
-            (0,3):7,
-            (0,8):5,
-            (5,0):11,
-            (3,1):6
+            (0,8):1
             }
     terminal_states = [
-        (0,8),
-        (7,0)
+        (0,8)
         ]
     env = environment.Gridworld(rewards, terminal_states)
 
-    policy = dict()
-    my_agent = Agent(policy, (0, 0))
-    for i in range(10):
-        for j in range(10):
-            #policy[(i,j)] = my_agent.generate_random_action
-            my_agent.update_policy((i, j), Actions.RIGHT)
+    my_agent = Agent(dict(), (0, 0))
+    # for i in range(10):
+    #    for j in range(10):
+    #        my_agent.update_policy_dict_entry((i, j), Actions.UP)
+    my_agent.update_policy(my_agent.generate_random_action)
     
-    mc = MonteCarlo(my_agent, env, 1)
-    mc.episode()
+    mc = MonteCarlo(my_agent, env, 0.9)
+    for i in range(100):
+        mc.episode()
+    plot_values(my_agent.value)
     
-
 test_monte_carlo()
