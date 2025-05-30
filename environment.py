@@ -62,8 +62,6 @@ class Gridworld:
             return (s[0], s[1]+1)
         elif (a == Actions.DOWN):
             return (s[0], s[1]-1)
-        
-        return s
 
     # Returns the reward from taking action `a` in state `s`
     def reward(self, a, s):
@@ -77,64 +75,3 @@ class Gridworld:
             return self.rewards.get(next_state)
         else:
             return 0
-        
-    # Utility function that generates a random valid action given a state `s`
-    def generate_random_action(self, s):
-        x = random.random()
-        if (s[0] == 0 and s[1] == 0):
-            if (x > 0.5):
-                return Actions.UP
-            else:
-                return Actions.RIGHT
-        elif (s[0] == 0 and s[1] == 9):
-            if (x > 0.5):
-                return Actions.DOWN
-            else:
-                return Actions.RIGHT
-        elif (s[0] == 9 and s[1] == 0):
-            if (x > 0.5):
-                return Actions.UP
-            else:
-                return Actions.LEFT
-        elif (s[0] == 9 and s[1] == 9):
-            if (x > 0.5):
-                return Actions.DOWN
-            else:
-                return Actions.LEFT
-        elif (s[0] == 0):
-            if (x > 2/3):
-                return Actions.UP
-            elif (x > 1/3):
-                return Actions.RIGHT
-            else:
-                return Actions.DOWN
-        elif (s[0] == 9):
-            if (x > 2/3):
-                return Actions.UP
-            elif (x > 1/3):
-                return Actions.LEFT
-            else:
-                return Actions.DOWN
-        elif (s[1] == 0):
-            if (x > 2/3):
-                return Actions.LEFT
-            elif (x > 1/3):
-                return Actions.UP
-            else:
-                return Actions.RIGHT
-        elif (s[1] == 9):
-            if (x > 2/3):
-                return Actions.LEFT
-            elif (x > 1/3):
-                return Actions.DOWN
-            else:
-                return Actions.RIGHT
-        else:
-            if (x > 3/4):
-                return Actions.UP
-            elif (x > 1/2):
-                return Actions.RIGHT
-            elif (x > 1/4):
-                return Actions.DOWN
-            else:
-                return Actions.LEFT

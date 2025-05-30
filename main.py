@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import environment
+import time
 from environment import Actions, Gridworld, IllegalActionException, TerminalStateException
 from value_estimator import MonteCarlo
 from agent import Agent
@@ -9,7 +10,7 @@ def plot_values(value_func):
     arr = np.zeros((10, 10))
     for i in range(10):
         for j in range(10):
-            arr[i, j] = value_func((i,j))
+            arr[j, i] = value_func((i,j))    # this is correct
 
     plt.imshow(arr, origin="lower")
     plt.colorbar()
@@ -18,9 +19,7 @@ def plot_values(value_func):
     plt.title("Value function")
     plt.show()
 
-
 def test_gridworld_straight_line():
-
     rewards = {
         (0,4):2, 
         (0,6):4,
@@ -52,10 +51,10 @@ def test_gridworld_straight_line():
 
 def test_monte_carlo():
     rewards = {
-            (0,8):1
+            (9,9):1
             }
     terminal_states = [
-        (0,8)
+        (9,9)
         ]
     env = environment.Gridworld(rewards, terminal_states)
 
@@ -66,8 +65,12 @@ def test_monte_carlo():
     my_agent.update_policy(my_agent.generate_random_action)
     
     mc = MonteCarlo(my_agent, env, 0.9)
-    for i in range(100):
+    start = time.time_ns()
+    for i in range(n := 1000):
         mc.episode()
+    end = time.time_ns()
+    print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
+    print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
     plot_values(my_agent.value)
     
 test_monte_carlo()
