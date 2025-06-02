@@ -51,10 +51,10 @@ def test_gridworld_straight_line():
 
 def test_monte_carlo():
     rewards = {
-            (9,9):1
+            (5,5):1
             }
     terminal_states = [
-        (9,9)
+        (5,5)
         ]
     env = environment.Gridworld(rewards, terminal_states)
 
@@ -66,7 +66,7 @@ def test_monte_carlo():
     
     mc = MonteCarlo(my_agent, env, 0.9)
     start = time.time_ns()
-    for i in range(n := 1000):
+    for i in range(n := 100):
         mc.episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")

@@ -39,7 +39,7 @@ class MonteCarlo:
                 self.agent.state = self.env.next_state(next_action, curr_state)
         except TerminalStateException:
             for i in range(len(states)):
-                # this runs in O(n^2) time with the length of the episode. I think there is a way to improve this
+                # this runs in O(n^2) time with the length of the episode
                 episode_return = self.return_from_sequence(rewards, i)
                 if (not states[i] in self.visits):
                     self.visits[states[i]] = 1
