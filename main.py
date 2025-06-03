@@ -59,14 +59,14 @@ def test_monte_carlo():
     env = environment.Gridworld(rewards, terminal_states)
 
     my_agent = Agent(dict(), (0, 0))
-    # for i in range(10):
+    #for i in range(10):
     #    for j in range(10):
     #        my_agent.update_policy_dict_entry((i, j), Actions.UP)
     my_agent.update_policy(my_agent.generate_random_action)
     
     mc = MonteCarlo(my_agent, env, 0.9)
     start = time.time_ns()
-    for i in range(n := 100):
+    for i in range(n := 1000):
         mc.episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")

@@ -38,15 +38,18 @@ class MonteCarlo:
                 rewards.append(self.env.reward(next_action, curr_state))
                 self.agent.state = self.env.next_state(next_action, curr_state)
         except TerminalStateException:
-            for i in range(len(states)):
-                # this runs in O(n^2) time with the length of the episode
-                episode_return = self.return_from_sequence(rewards, i)
+            # self.visits for the terminal state will always be 0, and value function will also be 0
+            i = len(states) - 1
+            return_i = 0
+            while (i > 0):
+                i -= 1
+                return_i = rewards[i] + self.gamma*return_i
                 if (not states[i] in self.visits):
                     self.visits[states[i]] = 1
-                    self.agent.values[states[i]] = episode_return
+                    self.agent.values[states[i]] = return_i
                 else:
-                    self.visits[states[i]] = self.visits[states[i]] + 1
-                    self.agent.values[states[i]] += (episode_return - self.agent.values[states[i]])*(1/self.visits[states[i]])
+                    self.visits[states[i]] += 1
+                    self.agent.values[states[i]] += (return_i - self.agent.values[states[i]]) / (self.visits[states[i]])
 
 class TDLambda:
 
