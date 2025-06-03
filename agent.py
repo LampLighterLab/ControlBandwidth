@@ -38,61 +38,13 @@ class Agent:
         self.state = self.initial_state
 
     def generate_random_action(self):
-        x = random.random()
-        if (self.state[0] == 0 and self.state[1] == 0):
-            if (x > 0.5):
-                return Actions.UP
-            else:
-                return Actions.RIGHT
-        elif (self.state[0] == 0 and self.state[1] == 9):
-            if (x > 0.5):
-                return Actions.DOWN
-            else:
-                return Actions.RIGHT
-        elif (self.state[0] == 9 and self.state[1] == 0):
-            if (x > 0.5):
-                return Actions.UP
-            else:
-                return Actions.LEFT
-        elif (self.state[0] == 9 and self.state[1] == 9):
-            if (x > 0.5):
-                return Actions.DOWN
-            else:
-                return Actions.LEFT
-        elif (self.state[0] == 0):
-            if (x > 2/3):
-                return Actions.UP
-            elif (x > 1/3):
-                return Actions.RIGHT
-            else:
-                return Actions.DOWN
-        elif (self.state[0] == 9):
-            if (x > 2/3):
-                return Actions.UP
-            elif (x > 1/3):
-                return Actions.LEFT
-            else:
-                return Actions.DOWN
-        elif (self.state[1] == 0):
-            if (x > 2/3):
-                return Actions.LEFT
-            elif (x > 1/3):
-                return Actions.UP
-            else:
-                return Actions.RIGHT
-        elif (self.state[1] == 9):
-            if (x > 2/3):
-                return Actions.LEFT
-            elif (x > 1/3):
-                return Actions.DOWN
-            else:
-                return Actions.RIGHT
-        else:
-            if (x > 3/4):
-                return Actions.UP
-            elif (x > 1/2):
-                return Actions.RIGHT
-            elif (x > 1/4):
-                return Actions.DOWN
-            else:
-                return Actions.LEFT
+        valid_actions = list()
+        if (not self.state[0] == 0):
+            valid_actions.append(Actions.LEFT)
+        if (not self.state[0] == 9):
+            valid_actions.append(Actions.RIGHT)
+        if (not self.state[1] == 0):
+            valid_actions.append(Actions.DOWN)
+        if (not self.state[1] == 9):
+            valid_actions.append(Actions.UP)
+        return random.choice(valid_actions)

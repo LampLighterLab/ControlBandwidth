@@ -25,7 +25,7 @@ class MonteCarlo:
     # Generate one episode and update agent's value function
     def episode(self):
         self.agent.reset_state()
-        STEP_LIMIT = 100000         # Prevent infinite loops. Is there a better way to do this?
+        STEP_LIMIT = 1000         # Prevent infinite loops. Is there a better way to do this?
         # states[n]: state at timestep n
         # rewards[n]: reward at timestep n+1
         states = list()
