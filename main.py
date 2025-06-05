@@ -4,7 +4,6 @@ import environment
 import time
 from environment import Actions, Gridworld, IllegalActionException, TerminalStateException
 from value_estimator import MonteCarlo
-from agent import Agent
 
 def plot_values(value_func):
     arr = np.zeros((10, 10))
@@ -58,19 +57,17 @@ def test_monte_carlo():
         ]
     env = environment.Gridworld(rewards, terminal_states)
 
-    my_agent = Agent(dict(), (0, 0))
-    #for i in range(10):
-    #    for j in range(10):
-    #        my_agent.update_policy_dict_entry((i, j), Actions.UP)
-    my_agent.update_policy(my_agent.generate_random_action)
-    
-    mc = MonteCarlo(my_agent, env, 0.9)
+    def up_policy(s):
+        return Actions.UP
+
+    mc = MonteCarlo(MonteCarlo.generate_random_action, (0,0), env, 0.9)
+
     start = time.time_ns()
-    for i in range(n := 1000):
+    for i in range(n := 100):
         mc.episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
-    plot_values(my_agent.value)
+    plot_values(mc.value)
     
 test_monte_carlo()
