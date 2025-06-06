@@ -8,10 +8,12 @@ class Actions(Enum):
     DOWN = 3
     LEFT = 4
 
+# Should not occur if everything goes right
 class IllegalActionException(Exception):
     def __init__(self):
         super().__init__("Attempted action is invalid for this state")
 
+# Is used to signal that the episode has terminated
 class TerminalStateException(Exception):
     def __init__(self):
         super().__init__("Terminal state reached")
@@ -25,9 +27,11 @@ class Gridworld:
     # x will represent the horizontal position (0 on the left), and y will represent
     # the vertical position (0 on the bottom)
     # Size of the grid world is fixed at 10x10 for now.
-    def __init__(self, rewards, terminal_states):
+    def __init__(self, rewards, terminal_states, size_x, size_y):
         self.rewards = rewards
         self.terminal_states = terminal_states
+        self.SIZE_X = size_x
+        self.SIZE_Y = size_y
 
     # Return whether or not taking action `a` in state `s` is valid.
     # a is an invalid action if it would cause the agent to go out of bounds.
@@ -36,14 +40,14 @@ class Gridworld:
     def is_valid_action(self, a, s):
         if (s[1] == 0 and a == Actions.DOWN):
             return False
-        elif (s[1] == 9 and a == Actions.UP):
+        elif (s[1] == self.SIZE_Y - 1 and a == Actions.UP):
             return False
         elif (s[0] == 0 and a == Actions.LEFT):
             return False
-        elif (s[0] == 9 and a == Actions.RIGHT):
+        elif (s[0] == self.SIZE_X - 1 and a == Actions.RIGHT):
             return False
         else:
-            return True 
+            return True
 
     # Return the new state s' from taking action `a` in state `s`, or throw
     # IllegalActionException if the action is invalid. Throw TerminalStateException
@@ -75,3 +79,16 @@ class Gridworld:
             return self.rewards.get(next_state)
         else:
             return 0
+
+    # Generate a valid random action
+    def generate_random_action(self, state):
+        valid_actions = list()
+        if (not state[0] == 0):
+            valid_actions.append(Actions.LEFT)
+        if (not state[0] == self.SIZE_X - 1):
+            valid_actions.append(Actions.RIGHT)
+        if (not state[1] == 0):
+            valid_actions.append(Actions.DOWN)
+        if (not state[1] == self.SIZE_Y - 1):
+            valid_actions.append(Actions.UP)
+        return random.choice(valid_actions)

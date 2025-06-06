@@ -5,11 +5,11 @@ import time
 from environment import Actions, Gridworld, IllegalActionException, TerminalStateException
 from value_estimator import MonteCarlo
 
-def plot_values(value_func):
-    arr = np.zeros((10, 10))
-    for i in range(10):
-        for j in range(10):
-            arr[j, i] = value_func((i,j))    # this is correct
+def plot_values(solver_obj):
+    arr = np.zeros((solver_obj.env.SIZE_Y, solver_obj.env.SIZE_X))
+    for i in range(solver_obj.env.SIZE_Y):
+        for j in range(solver_obj.env.SIZE_X):
+            arr[i,j] = solver_obj.value((j,i))    # this is correct
 
     plt.imshow(arr, origin="lower")
     plt.colorbar()
@@ -50,17 +50,17 @@ def test_gridworld_straight_line():
 
 def test_monte_carlo():
     rewards = {
-            (5,5):1
+            (5,1):1
             }
     terminal_states = [
-        (5,5)
+        (5,1)
         ]
-    env = environment.Gridworld(rewards, terminal_states)
+    env = environment.Gridworld(rewards, terminal_states, 10, 5)
 
     def up_policy(s):
         return Actions.UP
 
-    mc = MonteCarlo(MonteCarlo.generate_random_action, (0,0), env, 0.9)
+    mc = MonteCarlo(env.generate_random_action, (0,0), env, 0.9)
 
     start = time.time_ns()
     for i in range(n := 100):
@@ -68,6 +68,6 @@ def test_monte_carlo():
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
-    plot_values(mc.value)
+    plot_values(mc)
     
 test_monte_carlo()
