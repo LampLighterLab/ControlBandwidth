@@ -46,24 +46,27 @@ class MonteCarlo:
                 rewards.append(self.env.action_reward(next_action, curr_state))
                 self.state = self.env.next_state(next_action, curr_state)
                 stepnum += 1
-        except TerminalStateException:      # TODO: does not handle the case in the finite horizon problem where a terminal state is never reached. Currently, it will not update the value function if this happens in an episode
+        except TerminalStateException:
             if (self.gamma == 1):
                 terminal_reward = self.env.state_reward(states[-1]) * (self.max_timestep - stepnum)
             else:
                 terminal_reward = self.env.state_reward(states[-1]) * ((1 - (self.gamma ** (self.max_timestep - stepnum))) / (1 - self.gamma))
             rewards.append(terminal_reward)
 
-            i = len(states)
-            return_i = 0
-            while (i > 0):
-                i -= 1
-                return_i = rewards[i] + self.gamma*return_i
-                if (not states[i] in self.visits):
-                    self.visits[states[i]] = 1
-                    self.values[states[i]] = return_i
-                else:
-                    self.visits[states[i]] += 1
-                    self.values[states[i]] += (return_i - self.values[states[i]]) / (self.visits[states[i]])
+        if (stepnum == self.max_timestep):
+            rewards.append(self.env.state_reward(states[-1]))
+
+        i = len(states)
+        return_i = 0
+        while (i > 0):
+            i -= 1
+            return_i = rewards[i] + self.gamma*return_i
+            if (not states[i] in self.visits):
+                self.visits[states[i]] = 1
+                self.values[states[i]] = return_i
+            else:
+                self.visits[states[i]] += 1
+                self.values[states[i]] += (return_i - self.values[states[i]]) / (self.visits[states[i]])
 
 class TDLambda:
 
