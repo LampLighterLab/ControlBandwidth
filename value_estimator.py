@@ -7,7 +7,7 @@ class MonteCarlo:
 
     # `environment` is a Gridworld object and `gamma` is the discount factor
     # `policy` is a function mapping from tuples (x,y) to Actions
-    def __init__(self, initial_policy, initial_state, environment, gamma):
+    def __init__(self, initial_policy, initial_state, environment, gamma, max_timestep=100000):
         self.gamma = gamma
         self.env = environment
         self.visits = dict()
@@ -15,6 +15,7 @@ class MonteCarlo:
         self.policy = initial_policy
         self.initial_state = initial_state
         self.state = initial_state
+        self.max_timestep = max_timestep # TODO: only handles the finite horizon case. For infinite horizon, can input a large number for now, need to rewrite this code later
         
     def reset_state(self):
         self.state = self.initial_state
@@ -32,21 +33,27 @@ class MonteCarlo:
         STEP_LIMIT = 1000
         states = list()         # states[n]: state at timestep n
         rewards = list()        # rewards[n]: reward at timestep n+1
+        stepnum = 0
         try:
-            for i in range(STEP_LIMIT):
+            while (stepnum < self.max_timestep):
                 curr_state = self.state
-                # ? This handles the fact that the random policy function relies on `self` (taking 2 args), and an
-                # ? arbitrary function assigned to `policy` may only take in 1 argument. There may be a better way to do this
+                # ? This handles the fact that the random policy function relies on `self` (taking 2 args), and an arbitrary function assigned to `policy` may only take in 1 argument. There may be a better way to do this
                 try:
                     next_action = self.policy(self, curr_state)
                 except:
                     next_action = self.policy(curr_state)
                 states.append(curr_state)
-                rewards.append(self.env.reward(next_action, curr_state))
+                rewards.append(self.env.action_reward(next_action, curr_state))
                 self.state = self.env.next_state(next_action, curr_state)
-        except TerminalStateException:
-            # TODO: self.visits for the terminal state will always be 0, and value function will also be 0
-            i = len(states) - 1
+                stepnum += 1
+        except TerminalStateException:      # TODO: does not handle the case in the finite horizon problem where a terminal state is never reached. Currently, it will not update the value function if this happens in an episode
+            if (self.gamma == 1):
+                terminal_reward = self.env.state_reward(states[-1]) * (self.max_timestep - stepnum)
+            else:
+                terminal_reward = self.env.state_reward(states[-1]) * ((1 - (self.gamma ** (self.max_timestep - stepnum))) / (1 - self.gamma))
+            rewards.append(terminal_reward)
+
+            i = len(states)
             return_i = 0
             while (i > 0):
                 i -= 1
@@ -61,4 +68,16 @@ class MonteCarlo:
 class TDLambda:
 
     def __init__(self):
+        pass
+    
+    def reset_state(self):
+        pass
+    
+    def value(self):
+        pass
+    
+    def step(self):
+        pass
+    
+    def episode(self):
         pass

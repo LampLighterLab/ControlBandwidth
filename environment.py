@@ -26,7 +26,6 @@ class Gridworld:
     # tuples (x,y) which represent coordinates of terminal states.
     # x will represent the horizontal position (0 on the left), and y will represent
     # the vertical position (0 on the bottom)
-    # Size of the grid world is fixed at 10x10 for now.
     def __init__(self, rewards, terminal_states, size_x, size_y):
         self.rewards = rewards
         self.terminal_states = terminal_states
@@ -35,8 +34,7 @@ class Gridworld:
 
     # Return whether or not taking action `a` in state `s` is valid.
     # a is an invalid action if it would cause the agent to go out of bounds.
-    # `a` is a member of the Enum `Actions`, and `s` is the state, 
-    # which is a tuple (x,y) representing the grid coordinate.
+    # `a` is a member of Actions, and `s` is the state, which is a tuple (x,y).
     def is_valid_action(self, a, s):
         if (s[1] == 0 and a == Actions.DOWN):
             return False
@@ -67,18 +65,22 @@ class Gridworld:
         elif (a == Actions.DOWN):
             return (s[0], s[1]-1)
 
+    # Returns the reward from taking any action ending in state `s`
+    def state_reward(self, s):
+        if s in self.rewards:
+            return self.rewards.get(s)
+        else:
+            return 0
+
     # Returns the reward from taking action `a` in state `s`
-    def reward(self, a, s):
+    def action_reward(self, a, s):
         if (s in self.terminal_states):
             raise TerminalStateException()
         if (not self.is_valid_action(a, s)):
             raise IllegalActionException()
 
         next_state = self.next_state(a, s)
-        if next_state in self.rewards:
-            return self.rewards.get(next_state)
-        else:
-            return 0
+        return self.state_reward(next_state)
 
     # Generate a valid random action
     def generate_random_action(self, state):
