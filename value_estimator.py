@@ -31,7 +31,6 @@ class MonteCarlo:
     # Generate one episode and update agent's value function
     def episode(self):
         self.reset_state()
-        STEP_LIMIT = 1000
         states = list()         # states[n]: state at timestep n
         rewards = list()        # rewards[n]: reward at timestep n+1
         stepnum = 0
@@ -82,6 +81,7 @@ class TDLambda:
         self.alpha = alpha
         self.LAMBDA = LAMBDA # can't use variable name "lambda"
         self.max_timestep = max_timestep # use float('inf') for infinite horizon
+        self.state = self.initial_state
     
     def reset_state(self):
         self.state = self.initial_state
@@ -92,9 +92,25 @@ class TDLambda:
         else:
             return 0
     
-    # Returns True if the episode finished on this step, False otherwise
-    def step(self):
-        
-    
+    # Generate one episode and update agent's value function
     def episode(self):
-        pass
+        # TODO: currently copy-pasted from MonteCarlo
+        self.reset_state()
+        eligibility_traces = dict()     # Map from states (tuples) to floats
+        stepnum = 0
+        try:
+            while (stepnum < self.max_timestep):
+                curr_state = self.state
+                # ? This handles the fact that the random policy function relies on `self` (taking 2 args), and an arbitrary function assigned to `policy` may only take in 1 argument. There may be a better way to do this
+                try:
+                    next_action = self.policy(self, curr_state)
+                except:
+                    next_action = self.policy(curr_state)
+                reward = self.env.action_reward(next_action, curr_state)
+                # Update eligibility trace of current state
+                # Update value function
+                # Update all other eligibility traces
+                self.state = self.env.next_state(next_action, curr_state)
+                stepnum += 1
+        except TerminalStateException:
+            # Update value function in the case a terminal state is reached. No need to keep simulating steps. Also handle infinite horizon case.
