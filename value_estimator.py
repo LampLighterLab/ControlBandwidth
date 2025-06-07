@@ -1,6 +1,7 @@
 import environment
 from environment import TerminalStateException, Actions
 import random
+import math
 
 class MonteCarlo:
     # Every-visit Monte Carlo
@@ -8,14 +9,14 @@ class MonteCarlo:
     # `environment` is a Gridworld object and `gamma` is the discount factor
     # `policy` is a function mapping from tuples (x,y) to Actions
     def __init__(self, initial_policy, initial_state, environment, gamma, max_timestep=100000):
-        self.gamma = gamma
-        self.env = environment
-        self.visits = dict()
-        self.values = dict()
         self.policy = initial_policy
         self.initial_state = initial_state
+        self.env = environment
+        self.gamma = gamma
+        self.max_timestep = max_timestep # use float('inf') for infinite horizon
+        self.visits = dict()
+        self.values = dict()
         self.state = initial_state
-        self.max_timestep = max_timestep # TODO: only handles the finite horizon case. For infinite horizon, can input a large number for now, need to rewrite this code later
         
     def reset_state(self):
         self.state = self.initial_state
@@ -49,6 +50,8 @@ class MonteCarlo:
         except TerminalStateException:
             if (self.gamma == 1):
                 terminal_reward = self.env.state_reward(states[-1]) * (self.max_timestep - stepnum)
+            elif (math.isinf(self.max_timestep)):
+                terminal_reward = self.env.state_reward(states[-1]) / (1 - self.gamma)
             else:
                 terminal_reward = self.env.state_reward(states[-1]) * ((1 - (self.gamma ** (self.max_timestep - stepnum))) / (1 - self.gamma))
             rewards.append(terminal_reward)
@@ -69,18 +72,29 @@ class MonteCarlo:
                 self.values[states[i]] += (return_i - self.values[states[i]]) / (self.visits[states[i]])
 
 class TDLambda:
+    # Online TDLambda
 
-    def __init__(self):
-        pass
+    def __init__(self, initial_policy, initial_state, environment, gamma, alpha, LAMBDA, max_timestep=100000):
+        self.policy = initial_policy
+        self.initial_state = initial_state
+        self.env = environment
+        self.gamma = gamma
+        self.alpha = alpha
+        self.LAMBDA = LAMBDA # can't use variable name "lambda"
+        self.max_timestep = max_timestep # use float('inf') for infinite horizon
     
     def reset_state(self):
-        pass
+        self.state = self.initial_state
     
-    def value(self):
-        pass
+    def value(self, s):
+        if (s in self.values):
+            return self.values.get(s)
+        else:
+            return 0
     
+    # Returns True if the episode finished on this step, False otherwise
     def step(self):
-        pass
+        
     
     def episode(self):
         pass
