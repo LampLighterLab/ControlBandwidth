@@ -42,17 +42,17 @@ def test_monte_carlo():
     
 def test_tdlambda():
     rewards = {
-            (0,5):1
+            (5,5):1
             }
     terminal_states = [
-        (0,5)
+        (5,5)
         ]
     env = environment.Gridworld(rewards, terminal_states, 10, 8)
 
     def up_policy(s):
         return Actions.UP
 
-    td = TDLambda(up_policy, (0,0), env, 0.9, 0.1, 0.5, 1000)
+    td = TDLambda(env.generate_random_action, (0,0), env, 0.9, 0.1, 0.5, 1000)
 
     start = time.time_ns()
     for i in range(n := 100):

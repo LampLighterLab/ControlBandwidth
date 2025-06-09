@@ -96,11 +96,10 @@ class TDLambda:
     # Generate one episode and update agent's value function
     def episode(self):
         self.reset_state()
-        eligibility_traces = dict()     # Map from states (tuples) to floats
+        eligibility_traces = dict()     # Map from states (tuples) to floats. Eligibility trace of all states not in `eligibility_traces` is 0
         stepnum = 0
         try:
             while (stepnum < self.max_timestep):
-                print(self.state)
                 # ? This handles the fact that the random policy function relies on `self` (taking 2 args), and an arbitrary function assigned to `policy` may only take in 1 argument. There may be a better way to do this
                 try:
                     next_action = self.policy(self, self.state)
@@ -108,7 +107,7 @@ class TDLambda:
                     next_action = self.policy(self.state)
                 next_state = self.env.next_state(next_action, self.state) # ! throws terminal state exception, handle this later
                 reward = self.env.action_reward(next_action, self.state)
-                td_error = reward + self.gamma * self.value(self.state)
+                td_error = reward + self.gamma * self.value(next_state) - self.value(self.state)
                 
                 # Update eligibility traces
                 for state in eligibility_traces:
@@ -119,10 +118,11 @@ class TDLambda:
                     eligibility_traces[self.state] = 1
                 
                 # Update value function
-                
+                for state in eligibility_traces:
+                    self.values[state] = self.value(state) + (self.alpha * td_error * eligibility_traces[state])
 
                 self.state = next_state
                 stepnum += 1
         except TerminalStateException:
-            # Update value function in the case a terminal state is reached. No need to keep simulating steps. Also handle infinite horizon case.
+            # TODO: Update value function in the case a terminal state is reached. No need to keep simulating steps. Also handle infinite horizon case.
             pass
