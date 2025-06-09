@@ -124,5 +124,19 @@ class TDLambda:
                 self.state = next_state
                 stepnum += 1
         except TerminalStateException:
-            # TODO: Update value function in the case a terminal state is reached. No need to keep simulating steps. Also handle infinite horizon case.
-            pass
+            # ? There may be a closed form expression for the value function of each state once a terminal state is reached, given a number of remaining steps. However, for now this explicitly simulates each state
+            for i in range(self.max_timestep - stepnum):
+                reward = self.env.state_reward(self.state)
+                td_error = reward + self.gamma * self.value(self.state) - self.value(self.state)
+                
+                # Update eligibility traces
+                for state in eligibility_traces:
+                    eligibility_traces[state] = self.gamma * self.LAMBDA * eligibility_traces[state]
+                if (self.state in eligibility_traces):
+                    eligibility_traces[self.state] += 1
+                else:
+                    eligibility_traces[self.state] = 1
+                
+                # Update value function
+                for state in eligibility_traces:
+                    self.values[state] = self.value(state) + (self.alpha * td_error * eligibility_traces[state])
