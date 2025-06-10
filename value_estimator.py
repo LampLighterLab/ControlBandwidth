@@ -91,10 +91,6 @@ class TDLambda:
             return self.values.get(s)
         else:
             return 0
-    
-    # Returns True if the episode finished on this step, False otherwise
-    def step(self):
-        
-    
+
     def episode(self):
         pass
