@@ -20,20 +20,20 @@ def plot_values(solver_obj):
 
 def test_monte_carlo():
     rewards = {
-            (5,5):1
+            (0,5):1
             }
     terminal_states = [
-        (5,5)
+        (0,5)
         ]
     env = environment.Gridworld(rewards, terminal_states, 10, 8)
 
     def up_policy(s):
         return Actions.UP
 
-    mc = MonteCarlo(env.generate_random_action, (0,0), env, 0.9, 1000)
+    mc = MonteCarlo(up_policy, (0,0), env, 0.9, 1000)
 
     start = time.time_ns()
-    for i in range(n := 100):
+    for i in range(n := 1):
         mc.episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
@@ -62,4 +62,5 @@ def test_tdlambda():
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
     plot_values(td)
 
-test_tdlambda()
+# test_tdlambda()
+test_monte_carlo()
