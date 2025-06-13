@@ -1,6 +1,4 @@
-import environment
-from environment import TerminalStateException, Actions
-import random
+from environment import TerminalStateException
 import math
 
 class MonteCarlo:
@@ -87,12 +85,8 @@ class TDLambda:
             return self.values.get(s)
         else:
             return 0
-<<<<<<< HEAD
-
-=======
     
     # Generate one episode and update agent's value function
->>>>>>> TDLambda
     def episode(self):
         self.reset_state()
         eligibility_traces = dict()     # Map from states (tuples) to floats. Eligibility trace of all states not in `eligibility_traces` is 0

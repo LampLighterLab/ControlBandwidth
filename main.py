@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import environment
 import time
-from environment import Actions, Gridworld, IllegalActionException, TerminalStateException
+from environment import Actions
 from value_estimator import MonteCarlo, TDLambda
 
 def plot_values(solver_obj):
