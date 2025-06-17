@@ -13,11 +13,6 @@ class IllegalActionException(Exception):
     def __init__(self):
         super().__init__("Attempted action is invalid for this state")
 
-# Is used to signal that the episode has terminated
-class TerminalStateException(Exception):
-    def __init__(self):
-        super().__init__("Terminal state reached")
-
 class Gridworld:
     # Immutable class
 
@@ -48,11 +43,9 @@ class Gridworld:
             return True
 
     # Return the new state s' from taking action `a` in state `s`, or throw
-    # IllegalActionException if the action is invalid. Throw TerminalStateException
-    # if attempting to perform an action from a terminal state.
+    # IllegalActionException if the action is invalid.
+    # Do not call when `s` is a terminal state.
     def next_state(self, a, s):
-        if (s in self.terminal_states):
-            raise TerminalStateException()
         if (not self.is_valid_action(a, s)):
             raise IllegalActionException()
         
@@ -75,7 +68,7 @@ class Gridworld:
     # Returns the reward from taking action `a` in state `s`
     def action_reward(self, a, s):
         if (s in self.terminal_states):
-            return s # ! this is changed
+            return s
         if (not self.is_valid_action(a, s)):
             raise IllegalActionException()
 

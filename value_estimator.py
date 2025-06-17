@@ -1,5 +1,5 @@
 import environment
-from environment import TerminalStateException, Actions
+from environment import Actions
 import random
 import math
 
