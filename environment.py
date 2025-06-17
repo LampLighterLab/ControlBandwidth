@@ -52,7 +52,7 @@ class Gridworld:
     # if attempting to perform an action from a terminal state.
     def next_state(self, a, s):
         if (s in self.terminal_states):
-            raise TerminalStateException()
+            raise TerminalStateException() # TODO: rework to not use exception. I think this function will be used in control_method even if a terminal state will be reached so it will be hard to deal with this exception
         if (not self.is_valid_action(a, s)):
             raise IllegalActionException()
         
