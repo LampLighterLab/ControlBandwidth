@@ -1,6 +1,10 @@
+<<<<<<< HEAD
 import environment
 from environment import Actions
 import random
+=======
+from environment import TerminalStateException
+>>>>>>> Bandwidth
 import math
 
 class MonteCarlo:
