@@ -34,14 +34,16 @@ class MonteCarlo:
         states = list()         # states[n]: state at timestep n
         rewards = list()        # rewards[n]: reward at timestep n+1
         stepnum = 0
-        try:
-            while (stepnum < self.max_timestep):
-                next_action = self.policy(self.state)
-                states.append(self.state)
-                rewards.append(self.env.action_reward(next_action, self.state))
-                self.state = self.env.next_state(next_action, self.state)
-                stepnum += 1
-        except TerminalStateException:
+        while (stepnum < self.max_timestep and self.state not in self.env.terminal_states):
+            next_action = self.policy(self.state)
+            states.append(self.state)
+            rewards.append(self.env.action_reward(next_action, self.state))
+            self.state = self.env.next_state(next_action, self.state)
+            stepnum += 1
+
+        # Calculate reward of terminal state over remaining timesteps
+        if (self.state in self.env.terminal_states):
+            states.append(self.state)
             if (self.discount_factor == 1):
                 terminal_reward = self.env.state_reward(states[-1]) * (self.max_timestep - stepnum)
             elif (math.isinf(self.max_timestep)):
@@ -53,6 +55,7 @@ class MonteCarlo:
         if (stepnum == self.max_timestep):
             rewards.append(self.env.state_reward(states[-1]))
 
+        # Update value function
         i = len(states)
         return_i = 0
         while (i > 0):
@@ -87,51 +90,48 @@ class TDLambda:
             return self.values.get(s)
         else:
             return 0
-<<<<<<< HEAD
-
-=======
     
     # Generate one episode and update agent's value function
->>>>>>> TDLambda
     def episode(self):
         self.reset_state()
         eligibility_traces = dict()     # Map from states (tuples) to floats. Eligibility trace of all states not in `eligibility_traces` is 0
         stepnum = 0
-        try:
-            while (stepnum < self.max_timestep):
-                next_action = self.policy(self.state)
-                next_state = self.env.next_state(next_action, self.state)
-                reward = self.env.action_reward(next_action, self.state)
-                td_error = reward + self.discount_factor * self.value(next_state) - self.value(self.state)
-                
-                # Update eligibility traces
-                for state in eligibility_traces:
-                    eligibility_traces[state] = self.discount_factor * self.trace_decay * eligibility_traces[state]
-                if (self.state in eligibility_traces):
-                    eligibility_traces[self.state] += 1
-                else:
-                    eligibility_traces[self.state] = 1
-                
-                # Update value function
-                for state in eligibility_traces:
-                    self.values[state] = self.value(state) + (self.learning_rate * td_error * eligibility_traces[state])
 
-                self.state = next_state
-                stepnum += 1
-        except TerminalStateException:
-            # ? There may be a closed form expression for the value function of each state once a terminal state is reached, given a number of remaining steps. However, for now this explicitly simulates each state
-            for i in range(self.max_timestep - stepnum):
-                reward = self.env.state_reward(self.state)
-                td_error = reward + self.discount_factor * self.value(self.state) - self.value(self.state)
-                
-                # Update eligibility traces
-                for state in eligibility_traces:
-                    eligibility_traces[state] = self.discount_factor * self.trace_decay * eligibility_traces[state]
-                if (self.state in eligibility_traces):
-                    eligibility_traces[self.state] += 1
-                else:
-                    eligibility_traces[self.state] = 1
-                
-                # Update value function
-                for state in eligibility_traces:
-                    self.values[state] = self.value(state) + (self.learning_rate * td_error * eligibility_traces[state])
+        while (stepnum < self.max_timestep and self.state not in self.env.terminal_states):
+            next_action = self.policy(self.state)
+            next_state = self.env.next_state(next_action, self.state)
+            reward = self.env.action_reward(next_action, self.state)
+            td_error = reward + self.discount_factor * self.value(next_state) - self.value(self.state)
+            
+            # Update eligibility traces
+            for state in eligibility_traces:
+                eligibility_traces[state] = self.discount_factor * self.trace_decay * eligibility_traces[state]
+            if (self.state in eligibility_traces):
+                eligibility_traces[self.state] += 1
+            else:
+                eligibility_traces[self.state] = 1
+            
+            # Update value function
+            for state in eligibility_traces:
+                self.values[state] = self.value(state) + (self.learning_rate * td_error * eligibility_traces[state])
+
+            self.state = next_state
+            stepnum += 1
+
+        # Terminal state reached. This code basically just does the same thing as the previous loop.
+        # ? There may be a closed form expression for the value function of each state once a terminal state is reached, given a number of remaining steps. However, for now this explicitly simulates each state
+        for i in range(self.max_timestep - stepnum):
+            reward = self.env.state_reward(self.state)
+            td_error = reward + self.discount_factor * self.value(self.state) - self.value(self.state)
+            
+            # Update eligibility traces
+            for state in eligibility_traces:
+                eligibility_traces[state] = self.discount_factor * self.trace_decay * eligibility_traces[state]
+            if (self.state in eligibility_traces):
+                eligibility_traces[self.state] += 1
+            else:
+                eligibility_traces[self.state] = 1
+            
+            # Update value function
+            for state in eligibility_traces:
+                self.values[state] = self.value(state) + (self.learning_rate * td_error * eligibility_traces[state])

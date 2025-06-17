@@ -62,5 +62,5 @@ def test_tdlambda():
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
     plot_values(td)
 
-# test_tdlambda()
-test_monte_carlo()
+test_tdlambda()
+#test_monte_carlo()

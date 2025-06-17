@@ -75,7 +75,7 @@ class Gridworld:
     # Returns the reward from taking action `a` in state `s`
     def action_reward(self, a, s):
         if (s in self.terminal_states):
-            raise TerminalStateException()
+            return s # ! this is changed
         if (not self.is_valid_action(a, s)):
             raise IllegalActionException()
 
