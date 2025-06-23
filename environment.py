@@ -21,11 +21,12 @@ class Gridworld:
     # tuples (x,y) which represent coordinates of terminal states.
     # x will represent the horizontal position (0 on the left), and y will represent
     # the vertical position (0 on the bottom)
-    def __init__(self, rewards, terminal_states, size_x, size_y):
+    def __init__(self, rewards, terminal_states, size_x, size_y, control_freq=1):
         self.rewards = rewards
         self.terminal_states = terminal_states
         self.SIZE_X = size_x
         self.SIZE_Y = size_y
+        self.control_freq = control_freq
 
     # Return whether or not taking action `a` in state `s` is valid.
     # a is an invalid action if it would cause the agent to go out of bounds.
@@ -42,12 +43,11 @@ class Gridworld:
         else:
             return True
 
-    # Return the new state s' from taking action `a` in state `s`, or throw
-    # IllegalActionException if the action is invalid.
+    # Return the new state s' from taking action `a` in state `s`
     # Do not call when `s` is a terminal state.
     def next_state(self, a, s):
         if (not self.is_valid_action(a, s)):
-            raise IllegalActionException()
+            return s
         
         if (a == Actions.LEFT):
             return (s[0]-1, s[1])
@@ -70,7 +70,7 @@ class Gridworld:
         if (s in self.terminal_states):
             return s
         if (not self.is_valid_action(a, s)):
-            raise IllegalActionException()
+            return 0
 
         next_state = self.next_state(a, s)
         return self.state_reward(next_state)

@@ -47,7 +47,7 @@ def test_tdlambda():
     terminal_states = [
         (5,5)
         ]
-    env = environment.Gridworld(rewards, terminal_states, 10, 8)
+    env = environment.Gridworld(rewards, terminal_states, 10, 8, 5)
 
     def up_policy(s):
         return Actions.UP

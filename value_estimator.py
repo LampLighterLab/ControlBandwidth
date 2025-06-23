@@ -31,15 +31,19 @@ class MonteCarlo:
     # Generate one episode and update agent's value function
     def episode(self):
         self.reset_state()
+        straight_steps_left = 0
         states = list()         # states[n]: state at timestep n
         rewards = list()        # rewards[n]: reward at timestep n+1
         stepnum = 0
         while (stepnum < self.max_timestep and self.state not in self.env.terminal_states):
-            next_action = self.policy(self.state)
+            if (straight_steps_left == 0):
+                straight_steps_left = self.env.control_freq
+                next_action = self.policy(self.state)
             states.append(self.state)
             rewards.append(self.env.action_reward(next_action, self.state))
             self.state = self.env.next_state(next_action, self.state)
             stepnum += 1
+            straight_steps_left -= 1
 
         # Calculate reward of terminal state over remaining timesteps
         if (self.state in self.env.terminal_states):
@@ -96,9 +100,12 @@ class TDLambda:
         self.reset_state()
         eligibility_traces = dict()     # Map from states (tuples) to floats. Eligibility trace of all states not in `eligibility_traces` is 0
         stepnum = 0
-
+        straight_steps_left = 0
+        
         while (stepnum < self.max_timestep and self.state not in self.env.terminal_states):
-            next_action = self.policy(self.state)
+            if (straight_steps_left == 0):
+                straight_steps_left = self.env.control_freq
+                next_action = self.policy(self.state)
             next_state = self.env.next_state(next_action, self.state)
             reward = self.env.action_reward(next_action, self.state)
             td_error = reward + self.discount_factor * self.value(next_state) - self.value(self.state)
@@ -117,6 +124,7 @@ class TDLambda:
 
             self.state = next_state
             stepnum += 1
+            straight_steps_left -= 1
 
         # Terminal state reached. This code basically just does the same thing as the previous loop.
         # ? There may be a closed form expression for the value function of each state once a terminal state is reached, given a number of remaining steps. However, for now this explicitly simulates each state
