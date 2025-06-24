@@ -102,6 +102,8 @@ def test_q_learning():
 
     plt.tight_layout()
     plt.show()
+    
+    q.optimal_path()
 
 
 #test_tdlambda()

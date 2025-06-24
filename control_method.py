@@ -58,6 +58,25 @@ class QLearning:
             straight_steps_left -= 1
         
         # Handle terminal state
+    
+    def optimal_path(self):
+        path = list()
+        curr_state = self.initial_state
+        while (curr_state not in path and curr_state not in self.env.terminal_states):
+            path.append(curr_state)
+            random_action = random.choice(self.env.valid_actions(curr_state))
+            max_q_val = self.action_value(random_action, curr_state)
+            max_action = random_action
+            for action in self.env.valid_actions(curr_state):
+                if (self.action_value(action, self.state) > max_q_val):
+                    max_q_val = self.action_value(action, curr_state)
+                    max_action = action
+            curr_state = self.env.next_state(max_action, curr_state)
+        if curr_state in path:
+            print("Greedy path is cyclic! No path can be found with current Q(s,a)")
+        if curr_state in self.env.terminal_states:
+            print("Path:")
+            print(path)
 
 
 
