@@ -8,7 +8,7 @@ class MonteCarlo:
 
     # `environment` is a Gridworld object
     # `policy` is a function mapping from tuples (x,y) to Actions
-    def __init__(self, initial_policy, initial_state, environment, discount_factor, max_timestep=100000):
+    def __init__(self, initial_policy, initial_state, environment, discount_factor, max_timestep=10000):
         self.policy = initial_policy
         self.initial_state = initial_state
         self.env = environment
@@ -31,7 +31,7 @@ class MonteCarlo:
     # Generate one episode and update agent's value function
     def episode(self):
         self.reset_state()
-        straight_steps_left = 0
+        straight_steps_left = 0 # Handle control frequency
         states = list()         # states[n]: state at timestep n
         rewards = list()        # rewards[n]: reward at timestep n+1
         stepnum = 0

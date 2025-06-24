@@ -68,7 +68,7 @@ class Gridworld:
     # Returns the reward from taking action `a` in state `s`
     def action_reward(self, a, s):
         if (s in self.terminal_states):
-            return s
+            return self.rewards.get(s)
         if (not self.is_valid_action(a, s)):
             return 0
 
