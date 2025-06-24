@@ -42,6 +42,14 @@ class Gridworld:
             return False
         else:
             return True
+    
+    # Get a list of all valid actions from state `s`
+    def valid_actions(self, s):
+        a = list()
+        for action in Actions:
+            if self.is_valid_action(action, s):
+                a.append(action)
+        return a
 
     # Return the new state s' from taking action `a` in state `s`
     # Do not call when `s` is a terminal state.
