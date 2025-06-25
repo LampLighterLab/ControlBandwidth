@@ -65,15 +65,15 @@ def test_tdlambda():
     
 def test_q_learning():
     rewards = {
-            (3,3):1
+            (7,8):1
             }
     terminal_states = [
-        (3,3)
+        (7,8)
         ]
-    env = environment.Gridworld(rewards, terminal_states, 4, 5)
-    q = QLearning(env, (0,0), 0.1, 0.9, 0.5)
+    env = environment.Gridworld(rewards, terminal_states, 10, 10)
+    q = QLearning(env, (0,0), 0.3, 0.9, 0.5)
     start = time.time_ns()
-    for i in range(n := 10000):
+    for i in range(n := 500):
         q.episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
@@ -101,9 +101,9 @@ def test_q_learning():
         ax.set_title(f"Action: {name}")
 
     plt.tight_layout()
-    plt.show()
     
     q.optimal_path()
+    plt.show()
 
 
 #test_tdlambda()
