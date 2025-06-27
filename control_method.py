@@ -1,5 +1,6 @@
 from environment import Actions
 import random
+import numpy as np
 
 class QLearning:
     # Implements the Q Learning policy improvement algorithm

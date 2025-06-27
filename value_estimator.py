@@ -40,8 +40,8 @@ class MonteCarlo:
                 straight_steps_left = self.env.control_freq
                 next_action = self.policy(self.state)
             states.append(self.state)
-            rewards.append(self.env.action_reward(next_action, self.state))
-            self.state = self.env.next_state(next_action, self.state)
+            rewards.append(self.env.get_action_reward(next_action, self.state))
+            self.state = self.env.get_next_state(next_action, self.state)
             stepnum += 1
             straight_steps_left -= 1
 
@@ -49,15 +49,15 @@ class MonteCarlo:
         if (self.state in self.env.terminal_states):
             states.append(self.state)
             if (self.discount_factor == 1):
-                terminal_reward = self.env.state_reward(states[-1]) * (self.max_timestep - stepnum)
+                terminal_reward = self.env.get_state_reward(states[-1]) * (self.max_timestep - stepnum)
             elif (math.isinf(self.max_timestep)):
-                terminal_reward = self.env.state_reward(states[-1]) / (1 - self.discount_factor)
+                terminal_reward = self.env.get_state_reward(states[-1]) / (1 - self.discount_factor)
             else:
-                terminal_reward = self.env.state_reward(states[-1]) * ((1 - (self.discount_factor ** (self.max_timestep - stepnum))) / (1 - self.discount_factor))
+                terminal_reward = self.env.get_state_reward(states[-1]) * ((1 - (self.discount_factor ** (self.max_timestep - stepnum))) / (1 - self.discount_factor))
             rewards.append(terminal_reward)
 
         if (stepnum == self.max_timestep):
-            rewards.append(self.env.state_reward(states[-1]))
+            rewards.append(self.env.get_state_reward(states[-1]))
 
         # Update value function
         i = len(states)
@@ -106,8 +106,8 @@ class TDLambda:
             if (straight_steps_left == 0):
                 straight_steps_left = self.env.control_freq
                 next_action = self.policy(self.state)
-            next_state = self.env.next_state(next_action, self.state)
-            reward = self.env.action_reward(next_action, self.state)
+            next_state = self.env.get_next_state(next_action, self.state)
+            reward = self.env.get_action_reward(next_action, self.state)
             td_error = reward + self.discount_factor * self.get_state_value(next_state) - self.get_state_value(self.state)
             
             # Update eligibility traces

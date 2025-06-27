@@ -6,11 +6,11 @@ from environment import Actions
 from value_estimator import MonteCarlo, TDLambda
 from control_method import QLearning
 
-def plot_values(solver_object):
+def plot_values(solver_object, value_func):
     arr = np.zeros((solver_object.env.SIZE_Y, solver_object.env.SIZE_X))
     for i in range(solver_object.env.SIZE_Y):
         for j in range(solver_object.env.SIZE_X):
-            arr[i,j] = solver_object.value((j,i))    # this is correct
+            arr[i,j] = value_func((j,i))    # this is correct
 
     plt.imshow(arr, origin="lower")
     plt.colorbar()
@@ -21,25 +21,25 @@ def plot_values(solver_object):
 
 def test_monte_carlo():
     rewards = {
-            (0,5):1
+            (5,5):1
             }
     terminal_states = [
-        (0,5)
+        (5,5)
         ]
     env = environment.Gridworld(rewards, terminal_states, size=(10,8))
 
     def up_policy(s):
         return Actions.UP
 
-    mc = MonteCarlo(up_policy, env, initial_state=(0,0), discount_factor=0.9)
+    mc = MonteCarlo(env.generate_random_action, (0,0), env, discount_factor=0.9)
 
     start = time.time_ns()
-    for i in range(n := 1):
+    for i in range(n := 100):
         mc.run_episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
-    plot_values(mc)
+    plot_values(mc, mc.get_state_value)
     
 def test_tdlambda():
     rewards = {
@@ -61,7 +61,7 @@ def test_tdlambda():
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
-    plot_values(td)
+    plot_values(td, td.get_state_value)
     
 def test_q_learning():
     rewards = {
@@ -70,10 +70,10 @@ def test_q_learning():
     terminal_states = [
         (7,8)
         ]
-    env = environment.Gridworld(rewards, terminal_states, size=(10,10))
+    env = environment.Gridworld(rewards, terminal_states, size=(10,10), control_freq=1)
     q_learning_object = QLearning(env, initial_state=(0,0), epsilon=0.3, discount_factor=0.9, step_size=0.5)
     start = time.time_ns()
-    for i in range(n := 500):
+    for i in range(n := 1000):
         q_learning_object.run_episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
@@ -105,5 +105,5 @@ def test_q_learning():
 
 
 #test_tdlambda()
-#test_monte_carlo()
-test_q_learning()
+test_monte_carlo()
+#test_q_learning()
