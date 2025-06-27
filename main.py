@@ -73,16 +73,28 @@ def test_q_learning():
     env = environment.Gridworld(rewards, terminal_states, 10, 10)
     q = QLearning(env, (0,0), 0.3, 0.9, 0.5)
     start = time.time_ns()
-    for i in range(n := 500):
+    for i in range(n := 1000):
         q.episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
     
     solver_obj = q
+    arr = np.zeros((solver_obj.env.SIZE_Y, solver_obj.env.SIZE_X))
+    for i in range(solver_obj.env.SIZE_Y):
+        for j in range(solver_obj.env.SIZE_X):
+            arr[i,j] = solver_obj.state_value_approx((j,i))    # this is correct
+
+    plt.imshow(arr, origin="lower")
+    plt.colorbar()
+    plt.xlabel("x-coordinate")
+    plt.ylabel("y-coordinate")
+    plt.title("Value function")
+    plt.show()
+    
 
     # Used AI to generate code for plot only
-    actions = [Actions.UP, Actions.DOWN, Actions.LEFT, Actions.RIGHT]
+"""     actions = [Actions.UP, Actions.DOWN, Actions.LEFT, Actions.RIGHT]
     action_names = ["UP", "DOWN", "LEFT", "RIGHT"]
 
     fig, axs = plt.subplots(2, 2)
@@ -103,9 +115,15 @@ def test_q_learning():
     plt.tight_layout()
     
     q.optimal_path()
-    plt.show()
+    plt.show() """
 
 
 #test_tdlambda()
 #test_monte_carlo()
 test_q_learning()
+
+""" import numpy as np
+a = np.array([1,2,3])
+print(np.multiply(a,2)) """
+
+

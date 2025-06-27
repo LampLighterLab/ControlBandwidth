@@ -52,9 +52,8 @@ class Gridworld:
         return a
 
     # Return the new state s' from taking action `a` in state `s`
-    # Do not call when `s` is a terminal state.
     def next_state(self, a, s):
-        if (not self.is_valid_action(a, s)):
+        if ((not self.is_valid_action(a, s)) or s in self.terminal_states):
             return s
         
         if (a == Actions.LEFT):

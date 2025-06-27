@@ -1,9 +1,10 @@
 from environment import Actions
 import random
+import numpy as np
 
 class QLearning:
-    # Implements the Q Learning policy improvement algorithm
-    # Q(a,s) = 0 initially for all a,s  
+    # Implements the Q Learning policy improvement algorithm with state-value function approximation
+
     def __init__(self, env, initial_state, epsilon, discount_factor, step_size, max_timestep=10000):
         self.env = env
         self.initial_state = initial_state
@@ -13,6 +14,37 @@ class QLearning:
         self.max_timestep = max_timestep
         self.state = initial_state
         self.action_value_dict = dict()      # map: (action, (x,y)) -> float
+        
+        self.weights = [0] * 4
+        def obs_func(s):
+            return [s[0], s[1], s[0] ** 2, s[1] ** 2]
+        self.obs_vector = obs_func
+    
+    def state_value_approx(self, s):
+        sum = 0
+        obs_s = self.obs_vector(s)
+        for i in range(len(self.weights)):
+            sum += self.weights[i] * obs_s[i]
+        return sum
+    
+    def action_value_approx(self, a, s):
+        next_state = self.env.next_state(a, s)
+        return self.env.state_reward(s) + self.discount_factor*self.env.state_reward(next_state)
+    
+    # Find least squares solution for weights using TD(0) error
+    # states, rewards are lists of their values in an episode
+    def update_weights(self, states, rewards):
+        outer_prod = np.zeros((len(self.weights), len(self.weights)))
+        r_vec = np.zeros(len(self.weights))
+        for i in range(len(states)-1):
+            a = self.obs_vector(states[i])
+            b = self.obs_vector(states[i]) - np.multiply(self.discount_factor, self.obs_vector(states[i+1]))
+            outer_prod = np.add(outer_prod, np.outer(a, b))
+        for i in range(len(states)):
+            r_vec = np.add(r_vec, np.multiply(rewards[i], self.obs_vector(states[i])))
+        outer_prod = np.linalg.inv(outer_prod)
+        # 0th and 4th rows are somehow integer multiples of each other [x,y,x^2,y^2,xy]
+        self.weights = np.matmul(outer_prod, r_vec)
     
     def action_value(self, action, state):
         if ((action, state) in self.action_value_dict):
@@ -24,15 +56,17 @@ class QLearning:
         stepnum = 0
         straight_steps_remaining = 0
         next_action = Actions.UP            # declared here to keep `next_action` in scope. Initial action is arbitrary
+        states = list()
+        rewards = list()
         while (stepnum < self.max_timestep and self.state not in self.env.terminal_states):
             # Generate next action, state according to epsilon-greedy policy
             if (straight_steps_remaining == 0):
                 straight_steps_left = self.env.control_freq
-                max_q_val = self.action_value(next_action, self.state)
+                max_q_val = self.action_value_approx(next_action, self.state)
                 max_action = next_action
                 for action in self.env.valid_actions(self.state):
-                    if (self.action_value(action, self.state) > max_q_val):
-                        max_q_val = self.action_value(action, self.state)
+                    if (self.action_value_approx(action, self.state) > max_q_val):
+                        max_q_val = self.action_value_approx(action, self.state)
                         max_action = action
                 r = random.random()
                 if (r < self.epsilon):
@@ -41,21 +75,12 @@ class QLearning:
                     next_action = max_action
             next_state = self.env.next_state(next_action, self.state)
             
-            # Update action-value function
-            max_q_val = self.action_value(next_action, next_state)
-            max_action = next_action
-            for action in self.env.valid_actions(next_state):
-                if (self.action_value(action, next_state) > max_q_val):
-                    max_q_val = self.action_value(action, next_state)
-                    max_action = action
-            if ((next_action, self.state) in self.action_value_dict):
-                self.action_value_dict[(next_action, self.state)] += self.step_size * (self.env.action_reward(next_action, self.state) + self.discount_factor*max_q_val - self.action_value_dict[(next_action, self.state)])
-            else:
-                self.action_value_dict[(next_action, self.state)] = self.step_size * (self.env.action_reward(next_action, self.state) + self.discount_factor*max_q_val)
-            
+            states.append(self.state)
+            rewards.append(self.env.action_reward(next_action, self.state))
             self.state = next_state
             stepnum += 1
             straight_steps_left -= 1
+        self.update_weights(states, rewards)
         
         # Handle terminal state
     
@@ -79,28 +104,3 @@ class QLearning:
             print("Path:")
             print(path)
             print(f"Path length is {len(path)}")
-
-
-
-
-class LinearApprox:
-
-    def __init__(self):
-        self.weights = [0] * 7
-
-    # Returns the feature vector (a 7-tuple) for action a and state s
-    # [x'x, y'y, x'y, xy', x, y, 1]
-    def features(self, a, s):
-        x0 = s[0]
-        y0 = s[1]
-        next_state = self.env.next_state(a, s)
-        x1 = next_state[0]
-        y1 = next_state[1]
-        return (x1*x0, y1*y0, x1*y0, x0*y1, x0, y0, 1)
-
-    def action_value(self, a, s):
-        feature_vector = self.features(a, s)
-        sum = 0
-        for i in range(len(feature_vector)):
-            sum += feature_vector[i]*self.weights[i]
-        return sum
