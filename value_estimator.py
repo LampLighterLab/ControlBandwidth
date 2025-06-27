@@ -22,14 +22,14 @@ class MonteCarlo:
         self.state = self.initial_state
         
     # Returns the value function for a given state
-    def value(self, s):
+    def get_state_value(self, s):
         if (s in self.values):
             return self.values.get(s)
         else:
             return 0
 
     # Generate one episode and update agent's value function
-    def episode(self):
+    def run_episode(self):
         self.reset_state()
         straight_steps_left = 0 # Handle control frequency
         states = list()         # states[n]: state at timestep n
@@ -89,14 +89,14 @@ class TDLambda:
     def reset_state(self):
         self.state = self.initial_state
     
-    def value(self, s):
+    def get_state_value(self, s):
         if (s in self.values):
             return self.values.get(s)
         else:
             return 0
     
     # Generate one episode and update agent's value function
-    def episode(self):
+    def run_episode(self):
         self.reset_state()
         eligibility_traces = dict()     # Map from states (tuples) to floats. Eligibility trace of all states not in `eligibility_traces` is 0
         stepnum = 0
@@ -108,7 +108,7 @@ class TDLambda:
                 next_action = self.policy(self.state)
             next_state = self.env.next_state(next_action, self.state)
             reward = self.env.action_reward(next_action, self.state)
-            td_error = reward + self.discount_factor * self.value(next_state) - self.value(self.state)
+            td_error = reward + self.discount_factor * self.get_state_value(next_state) - self.get_state_value(self.state)
             
             # Update eligibility traces
             for state in eligibility_traces:
@@ -120,7 +120,7 @@ class TDLambda:
             
             # Update value function
             for state in eligibility_traces:
-                self.values[state] = self.value(state) + (self.learning_rate * td_error * eligibility_traces[state])
+                self.values[state] = self.get_state_value(state) + (self.learning_rate * td_error * eligibility_traces[state])
 
             self.state = next_state
             stepnum += 1
@@ -130,7 +130,7 @@ class TDLambda:
         # ? There may be a closed form expression for the value function of each state once a terminal state is reached, given a number of remaining steps. However, for now this explicitly simulates each state
         for i in range(self.max_timestep - stepnum):
             reward = self.env.state_reward(self.state)
-            td_error = reward + self.discount_factor * self.value(self.state) - self.value(self.state)
+            td_error = reward + self.discount_factor * self.get_state_value(self.state) - self.get_state_value(self.state)
             
             # Update eligibility traces
             for state in eligibility_traces:
@@ -142,4 +142,4 @@ class TDLambda:
             
             # Update value function
             for state in eligibility_traces:
-                self.values[state] = self.value(state) + (self.learning_rate * td_error * eligibility_traces[state])
+                self.values[state] = self.get_state_value(state) + (self.learning_rate * td_error * eligibility_traces[state])

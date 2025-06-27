@@ -6,11 +6,11 @@ from environment import Actions
 from value_estimator import MonteCarlo, TDLambda
 from control_method import QLearning
 
-def plot_values(solver_obj):
-    arr = np.zeros((solver_obj.env.SIZE_Y, solver_obj.env.SIZE_X))
-    for i in range(solver_obj.env.SIZE_Y):
-        for j in range(solver_obj.env.SIZE_X):
-            arr[i,j] = solver_obj.value((j,i))    # this is correct
+def plot_values(solver_object):
+    arr = np.zeros((solver_object.env.SIZE_Y, solver_object.env.SIZE_X))
+    for i in range(solver_object.env.SIZE_Y):
+        for j in range(solver_object.env.SIZE_X):
+            arr[i,j] = solver_object.value((j,i))    # this is correct
 
     plt.imshow(arr, origin="lower")
     plt.colorbar()
@@ -26,16 +26,16 @@ def test_monte_carlo():
     terminal_states = [
         (0,5)
         ]
-    env = environment.Gridworld(rewards, terminal_states, 10, 8)
+    env = environment.Gridworld(rewards, terminal_states, size=(10,8))
 
     def up_policy(s):
         return Actions.UP
 
-    mc = MonteCarlo(up_policy, (0,0), env, 0.9, 1000)
+    mc = MonteCarlo(up_policy, env, initial_state=(0,0), discount_factor=0.9)
 
     start = time.time_ns()
     for i in range(n := 1):
-        mc.episode()
+        mc.run_episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
@@ -48,16 +48,16 @@ def test_tdlambda():
     terminal_states = [
         (5,5)
         ]
-    env = environment.Gridworld(rewards, terminal_states, 10, 8, 5)
+    env = environment.Gridworld(rewards, terminal_states, size=(10,8), control_freq=5)
 
     def up_policy(s):
         return Actions.UP
 
-    td = TDLambda(env.generate_random_action, (0,0), env, 0.9, 0.1, 0.5, 1000)
+    td = TDLambda(env.generate_random_action, (0,0), env, discount_factor=0.9, learning_rate=0.1, trace_decay=0.5)
 
     start = time.time_ns()
     for i in range(n := 100):
-        td.episode()
+        td.run_episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
@@ -70,16 +70,14 @@ def test_q_learning():
     terminal_states = [
         (7,8)
         ]
-    env = environment.Gridworld(rewards, terminal_states, 10, 10)
-    q = QLearning(env, (0,0), 0.3, 0.9, 0.5)
+    env = environment.Gridworld(rewards, terminal_states, size=(10,10))
+    q_learning_object = QLearning(env, initial_state=(0,0), epsilon=0.3, discount_factor=0.9, step_size=0.5)
     start = time.time_ns()
     for i in range(n := 500):
-        q.episode()
+        q_learning_object.run_episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
-    
-    solver_obj = q
 
     # Used AI to generate code for plot only
     actions = [Actions.UP, Actions.DOWN, Actions.LEFT, Actions.RIGHT]
@@ -89,10 +87,10 @@ def test_q_learning():
     fig.suptitle("Action-Value Function")
 
     for ax, action, name in zip(axs.flat, actions, action_names):
-        arr = np.zeros((solver_obj.env.SIZE_Y, solver_obj.env.SIZE_X))
-        for i in range(solver_obj.env.SIZE_Y):
-            for j in range(solver_obj.env.SIZE_X):
-                arr[i, j] = solver_obj.action_value(action, (j, i))
+        arr = np.zeros((q_learning_object.env.SIZE_Y, q_learning_object.env.SIZE_X))
+        for i in range(q_learning_object.env.SIZE_Y):
+            for j in range(q_learning_object.env.SIZE_X):
+                arr[i, j] = q_learning_object.get_action_value(action, (j, i))
 
         im = ax.imshow(arr, origin="lower")
         fig.colorbar(im, ax=ax)
@@ -102,7 +100,7 @@ def test_q_learning():
 
     plt.tight_layout()
     
-    q.optimal_path()
+    q_learning_object.get_optimal_path()
     plt.show()
 
 

@@ -14,12 +14,12 @@ class QLearning:
         self.state = initial_state
         self.action_value_dict = dict()      # map: (action, (x,y)) -> float
     
-    def action_value(self, action, state):
+    def get_action_value(self, action, state):
         if ((action, state) in self.action_value_dict):
             return self.action_value_dict[(action, state)]
         return 0
     
-    def episode(self):
+    def run_episode(self):
         self.state = self.initial_state
         stepnum = 0
         straight_steps_remaining = 0
@@ -28,30 +28,30 @@ class QLearning:
             # Generate next action, state according to epsilon-greedy policy
             if (straight_steps_remaining == 0):
                 straight_steps_left = self.env.control_freq
-                max_q_val = self.action_value(next_action, self.state)
+                max_q_val = self.get_action_value(next_action, self.state)
                 max_action = next_action
-                for action in self.env.valid_actions(self.state):
-                    if (self.action_value(action, self.state) > max_q_val):
-                        max_q_val = self.action_value(action, self.state)
+                for action in self.env.get_valid_actions(self.state):
+                    if (self.get_action_value(action, self.state) > max_q_val):
+                        max_q_val = self.get_action_value(action, self.state)
                         max_action = action
                 r = random.random()
                 if (r < self.epsilon):
                     next_action = self.env.generate_random_action(self.state)
                 else:
                     next_action = max_action
-            next_state = self.env.next_state(next_action, self.state)
+            next_state = self.env.get_next_state(next_action, self.state)
             
             # Update action-value function
-            max_q_val = self.action_value(next_action, next_state)
+            max_q_val = self.get_action_value(next_action, next_state)
             max_action = next_action
-            for action in self.env.valid_actions(next_state):
-                if (self.action_value(action, next_state) > max_q_val):
-                    max_q_val = self.action_value(action, next_state)
+            for action in self.env.get_valid_actions(next_state):
+                if (self.get_action_value(action, next_state) > max_q_val):
+                    max_q_val = self.get_action_value(action, next_state)
                     max_action = action
             if ((next_action, self.state) in self.action_value_dict):
-                self.action_value_dict[(next_action, self.state)] += self.step_size * (self.env.action_reward(next_action, self.state) + self.discount_factor*max_q_val - self.action_value_dict[(next_action, self.state)])
+                self.action_value_dict[(next_action, self.state)] += self.step_size * (self.env.get_action_reward(next_action, self.state) + self.discount_factor*max_q_val - self.action_value_dict[(next_action, self.state)])
             else:
-                self.action_value_dict[(next_action, self.state)] = self.step_size * (self.env.action_reward(next_action, self.state) + self.discount_factor*max_q_val)
+                self.action_value_dict[(next_action, self.state)] = self.step_size * (self.env.get_action_reward(next_action, self.state) + self.discount_factor*max_q_val)
             
             self.state = next_state
             stepnum += 1
@@ -59,19 +59,18 @@ class QLearning:
         
         # Handle terminal state
     
-    def optimal_path(self):
+    def get_optimal_path(self):
         path = list()
         curr_state = self.initial_state
         while (curr_state not in path and curr_state not in self.env.terminal_states):
             path.append(curr_state)
-            random_action = random.choice(self.env.valid_actions(curr_state))
-            max_q_val = self.action_value(random_action, curr_state)
-            max_action = random_action
-            for action in self.env.valid_actions(curr_state):
-                if (self.action_value(action, curr_state) > max_q_val):
-                    max_q_val = self.action_value(action, curr_state)
+            max_action = self.env.get_valid_actions(curr_state)[0]
+            max_q_val = self.get_action_value(max_action, curr_state)
+            for action in self.env.get_valid_actions(curr_state):
+                if (self.get_action_value(action, curr_state) > max_q_val):
+                    max_q_val = self.get_action_value(action, curr_state)
                     max_action = action
-            curr_state = self.env.next_state(max_action, curr_state)
+            curr_state = self.env.get_next_state(max_action, curr_state)
         if curr_state in path:
             print("Greedy path is cyclic! No path can be found with current Q(s,a)")
         if curr_state in self.env.terminal_states:
@@ -79,28 +78,3 @@ class QLearning:
             print("Path:")
             print(path)
             print(f"Path length is {len(path)}")
-
-
-
-
-class LinearApprox:
-
-    def __init__(self):
-        self.weights = [0] * 7
-
-    # Returns the feature vector (a 7-tuple) for action a and state s
-    # [x'x, y'y, x'y, xy', x, y, 1]
-    def features(self, a, s):
-        x0 = s[0]
-        y0 = s[1]
-        next_state = self.env.next_state(a, s)
-        x1 = next_state[0]
-        y1 = next_state[1]
-        return (x1*x0, y1*y0, x1*y0, x0*y1, x0, y0, 1)
-
-    def action_value(self, a, s):
-        feature_vector = self.features(a, s)
-        sum = 0
-        for i in range(len(feature_vector)):
-            sum += feature_vector[i]*self.weights[i]
-        return sum

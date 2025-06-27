@@ -21,11 +21,11 @@ class Gridworld:
     # tuples (x,y) which represent coordinates of terminal states.
     # x will represent the horizontal position (0 on the left), and y will represent
     # the vertical position (0 on the bottom)
-    def __init__(self, rewards, terminal_states, size_x, size_y, control_freq=1):
+    def __init__(self, rewards, terminal_states, size=(10,10), control_freq=1):
         self.rewards = rewards
         self.terminal_states = terminal_states
-        self.SIZE_X = size_x
-        self.SIZE_Y = size_y
+        self.SIZE_X = size[0]
+        self.SIZE_Y = size[1]
         self.control_freq = control_freq
 
     # Return whether or not taking action `a` in state `s` is valid.
@@ -44,7 +44,7 @@ class Gridworld:
             return True
     
     # Get a list of all valid actions from state `s`
-    def valid_actions(self, s):
+    def get_valid_actions(self, s):
         a = list()
         for action in Actions:
             if self.is_valid_action(action, s):
@@ -53,7 +53,7 @@ class Gridworld:
 
     # Return the new state s' from taking action `a` in state `s`
     # Do not call when `s` is a terminal state.
-    def next_state(self, a, s):
+    def get_next_state(self, a, s):
         if (not self.is_valid_action(a, s)):
             return s
         
@@ -67,21 +67,21 @@ class Gridworld:
             return (s[0], s[1]-1)
 
     # Returns the reward from taking any action ending in state `s`
-    def state_reward(self, s):
+    def get_state_reward(self, s):
         if s in self.rewards:
             return self.rewards.get(s)
         else:
             return 0
 
     # Returns the reward from taking action `a` in state `s`
-    def action_reward(self, a, s):
+    def get_action_reward(self, a, s):
         if (s in self.terminal_states):
             return self.rewards.get(s)
         if (not self.is_valid_action(a, s)):
             return 0
 
-        next_state = self.next_state(a, s)
-        return self.state_reward(next_state)
+        next_state = self.get_next_state(a, s)
+        return self.get_state_reward(next_state)
 
     # Generate a valid random action
     def generate_random_action(self, state):
