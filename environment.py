@@ -1,5 +1,5 @@
 from enum import Enum
-import random
+import numpy as np
 
 # Set of actions that can be taken. The assigned values are meaningless
 class Actions(Enum):
@@ -27,6 +27,7 @@ class Gridworld:
         self.SIZE_X = size_x
         self.SIZE_Y = size_y
         self.control_freq = control_freq
+        self.random_generator = np.random.default_rng(54321)
 
     # Return whether or not taking action `a` in state `s` is valid.
     # a is an invalid action if it would cause the agent to go out of bounds.
@@ -93,4 +94,4 @@ class Gridworld:
             valid_actions.append(Actions.DOWN)
         if (not state[1] == self.SIZE_Y - 1):
             valid_actions.append(Actions.UP)
-        return random.choice(valid_actions)
+        return self.random_generator.choice(valid_actions)

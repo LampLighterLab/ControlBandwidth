@@ -14,10 +14,11 @@ class QLearning:
         self.max_timestep = max_timestep
         self.state = initial_state
         self.action_value_dict = dict()      # map: (action, (x,y)) -> float
+        self.random_generator = np.random.default_rng(123456)
         
-        self.weights = [0] * 4
+        self.weights = [0] * 5
         def obs_func(s):
-            return [s[0], s[1], s[0] ** 2, s[1] ** 2]
+            return [s[0], s[1], s[0] ** 2, s[1] ** 2, 1]
         self.obs_vector = obs_func
     
     def state_value_approx(self, s):
@@ -68,7 +69,7 @@ class QLearning:
                     if (self.action_value_approx(action, self.state) > max_q_val):
                         max_q_val = self.action_value_approx(action, self.state)
                         max_action = action
-                r = random.random()
+                r = self.random_generator.random()
                 if (r < self.epsilon):
                     next_action = self.env.generate_random_action(self.state)
                 else:
@@ -89,7 +90,7 @@ class QLearning:
         curr_state = self.initial_state
         while (curr_state not in path and curr_state not in self.env.terminal_states):
             path.append(curr_state)
-            random_action = random.choice(self.env.valid_actions(curr_state))
+            random_action = self.random_generator.choice(self.env.valid_actions(curr_state))
             max_q_val = self.action_value(random_action, curr_state)
             max_action = random_action
             for action in self.env.valid_actions(curr_state):
