@@ -140,13 +140,6 @@ def test_q_hyperparams():
             x = s[0]-7
             y = s[1]-8
             return [x**2, y**2, 1]
-    def symlog(x):
-        if (x>1):
-            return math.log10(x)
-        elif (x>-1):
-            return 0
-        else:
-            return -1 * math.log10(-1 * x)
 
     import statistics
     hyperparam_space = np.zeros((10, 11))
@@ -191,4 +184,53 @@ def test_q_hyperparams():
     plt.title("Ratio of value func approx of the terminal state to initial state")
     plt.show()
 
-test_q_hyperparams()
+# test_q_hyperparams()
+
+def test_q_hyperparams_log():
+    hyperparam_space = np.array([
+    [  -2.41482   , 20.81079   , -29.69531   , 128.57922   ,  -4.20834   ,  -1.41246   ,
+      -1.21603   ,  -1.29426   , -11.77985   ,   6.3966    ,   1.        ],
+    [  -3.01442   ,  -1.53253   , -15.20611   ,  -1.55717   ,  -1.85122   , 167.7134    ,
+    -151.54563   ,  -3.95636   ,  -3.48186   ,  34.81809   ,   1.        ],
+    [  -1.1998    , -10.31499   ,  -1.83877   ,  -1.14832   ,  -1.18648   ,  -8.38462   ,
+      -1.74972   ,  -9.36039   ,  -2.21509   ,  13.32823   ,   1.        ],
+    [  -1.72026   ,   7.27984   ,  -1.39925   ,  -2.25681   ,  -1.30944   ,  -2.02385   ,
+     -12.04363   ,  -7.47626   , -10.42146   ,   3.38411   ,   1.        ],
+    [  -1.44241   ,  -1.12715   ,  -2.10831   ,  -1.96234   ,  -1.61072   ,  -1.29369   ,
+      -1.94765   ,  -5.40722   ,  -2.11048   ,  -7.60945   ,   1.        ],
+    [  -1.39247   ,  -0.80145   ,  -0.90789   ,  -1.99657   ,  -2.18361   ,  -2.72005   ,
+      -2.03773   ,  -1.7948    ,  -1.51859   ,  -7.32497   ,   1.        ],
+    [  -1.76354   ,  -2.3288    ,  -1.78533   ,  -1.32754   ,  -0.9063    ,  -3.24532   ,
+      -1.7742    , -32.08496   ,  -1.8432    ,  -2.31669   ,   1.        ],
+    [  -0.79966   ,  -1.63033   ,  -1.24521   ,  -2.17248   ,  -4.9164    ,  -1.43564   ,
+      -1.26788   ,  -0.85748   ,  -3.53858   ,  -3.28327   ,   1.        ],
+    [  -6.15872   ,  -7.09923   ,  -1.74112   , -14.40401   ,  -1.4704    ,  -1.13041   ,
+      -2.31638   ,  -1.01378   ,  -1.41869   ,  -1.76237   ,   1.        ]
+    ])
+
+    def symlog(x):
+        if (x>1):
+            return math.log10(x)
+        elif (x>-1):
+            return 0
+        else:
+            return -1 * math.log10(-1 * x)
+    
+    for i in range(9):
+        for j in range(11):
+            hyperparam_space[i][j] = symlog(hyperparam_space[i][j])
+
+    plt.imshow(
+        hyperparam_space,
+        extent=(-0.05, 1.05, 0.05, 0.95),
+        origin="lower"
+    )
+    
+
+    plt.colorbar()
+    plt.xlabel("discount factor")
+    plt.ylabel("epsilon")
+    plt.title("symlog(V(terminal state) / V(initial state)),\nmedian of 5 trials, 500 episodes")
+    plt.show()
+    
+test_q_hyperparams_log()
