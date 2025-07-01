@@ -6,7 +6,7 @@ from numpy.linalg import LinAlgError
 class QLearning:
     # Implements the Q Learning policy improvement algorithm with state-value function approximation
 
-    def __init__(self, env, initial_state, epsilon, discount_factor, step_size, max_timestep=10000):
+    def __init__(self, env, initial_state, epsilon, discount_factor, step_size, obs_func, max_timestep=10000):
         self.env = env
         self.initial_state = initial_state
         self.epsilon = epsilon               # Random exploration factor in epsilon-greedy behavior policy
@@ -15,12 +15,10 @@ class QLearning:
         self.max_timestep = max_timestep
         self.state = initial_state
         self.action_value_dict = dict()      # map: (action, (x,y)) -> float
-        self.random_generator = np.random.default_rng(1234526) # 1234526 gets linalg error on episode 415. the 0th and 4th rows are inexplicably scalar multiples
+        self.random_generator = np.random.default_rng(1234526)
         
-        self.weights = [0] * 6
-        def obs_func(s):
-            return [s[0]-7, s[1]-8, (s[0]-7) ** 2, (s[1]-8) ** 2, (s[0]-7)*(s[1]-8), 1]
         self.obs_vector = obs_func
+        self.weights = [0] * len(obs_func(initial_state))
     
     def state_value_approx(self, s):
         sum = 0
@@ -48,17 +46,12 @@ class QLearning:
             outer_prod = np.add(outer_prod, a * b)
         for i in range(len(states)):
             r_vec = np.add(r_vec, np.multiply(rewards[i], self.obs_vector(states[i])))
-        # "cheating" to get around non-invertibility: multiply element at (0,0) by small amount
-        for i in range(100):
-            try:
-                outer_prod = np.linalg.inv(outer_prod)
-                break
-            except LinAlgError:
-                outer_prod[0][0] *= 1.0001
-                print("States:")
-                print(states)
-                print("perturbed matrix entry at (0,0)")
-        # 0th and 4th rows are somehow integer multiples of each other [x,y,x^2,y^2,xy,1]
+        # "cheating" to get around non-invertibility
+        try:
+            outer_prod = np.linalg.inv(outer_prod)
+        except LinAlgError:
+            outer_prod = np.add(outer_prod, np.multiply(0.0001, np.identity(len(self.weights))))
+            outer_prod = np.linalg.inv(outer_prod)
         self.weights = np.matmul(outer_prod, r_vec)
     
     def action_value(self, action, state):
