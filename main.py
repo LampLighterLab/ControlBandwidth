@@ -73,10 +73,9 @@ def test_q_learning():
     env = environment.Gridworld(rewards, terminal_states, 10, 10)
     q = QLearning(env, (0,0), 0.3, 0.9, 0.5)
     start = time.time_ns()
-    for i in range(n := 100):
+    for i in range(n := 500):
         q.episode()
     end = time.time_ns()
-    print(q.weights)
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
     

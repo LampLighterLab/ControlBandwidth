@@ -1,6 +1,7 @@
 from environment import Actions
 import random
 import numpy as np
+from numpy.linalg import LinAlgError
 
 class QLearning:
     # Implements the Q Learning policy improvement algorithm with state-value function approximation
@@ -14,11 +15,11 @@ class QLearning:
         self.max_timestep = max_timestep
         self.state = initial_state
         self.action_value_dict = dict()      # map: (action, (x,y)) -> float
-        self.random_generator = np.random.default_rng(123456)
+        self.random_generator = np.random.default_rng(1234526) # 1234526 gets linalg error on episode 415. the 0th and 4th rows are inexplicably scalar multiples
         
-        self.weights = [0] * 5
+        self.weights = [0] * 6
         def obs_func(s):
-            return [s[0], s[1], s[0] ** 2, s[1] ** 2, 1]
+            return [s[0]-7, s[1]-8, (s[0]-7) ** 2, (s[1]-8) ** 2, (s[0]-7)*(s[1]-8), 1]
         self.obs_vector = obs_func
     
     def state_value_approx(self, s):
@@ -35,16 +36,29 @@ class QLearning:
     # Find least squares solution for weights using TD(0) error
     # states, rewards are lists of their values in an episode
     def update_weights(self, states, rewards):
+        np.set_printoptions(suppress=True, precision=5)
+
         outer_prod = np.zeros((len(self.weights), len(self.weights)))
         r_vec = np.zeros(len(self.weights))
         for i in range(len(states)-1):
-            a = self.obs_vector(states[i])
-            b = self.obs_vector(states[i]) - np.multiply(self.discount_factor, self.obs_vector(states[i+1]))
-            outer_prod = np.add(outer_prod, np.outer(a, b))
+            a = np.array(self.obs_vector(states[i]))
+            b = np.array(self.obs_vector(states[i]) - np.multiply(self.discount_factor, self.obs_vector(states[i+1])))
+            a = np.reshape(a, (a.shape[0], 1))
+            b = np.reshape(b, (1, b.shape[0]))
+            outer_prod = np.add(outer_prod, a * b)
         for i in range(len(states)):
             r_vec = np.add(r_vec, np.multiply(rewards[i], self.obs_vector(states[i])))
-        outer_prod = np.linalg.inv(outer_prod)
-        # 0th and 4th rows are somehow integer multiples of each other [x,y,x^2,y^2,xy]
+        # "cheating" to get around non-invertibility: multiply element at (0,0) by small amount
+        for i in range(100):
+            try:
+                outer_prod = np.linalg.inv(outer_prod)
+                break
+            except LinAlgError:
+                outer_prod[0][0] *= 1.0001
+                print("States:")
+                print(states)
+                print("perturbed matrix entry at (0,0)")
+        # 0th and 4th rows are somehow integer multiples of each other [x,y,x^2,y^2,xy,1]
         self.weights = np.matmul(outer_prod, r_vec)
     
     def action_value(self, action, state):
