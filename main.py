@@ -105,5 +105,5 @@ def test_q_learning():
 
 
 #test_tdlambda()
-test_monte_carlo()
-#test_q_learning()
+#test_monte_carlo()
+test_q_learning()
