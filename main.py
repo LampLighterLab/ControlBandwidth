@@ -75,7 +75,7 @@ def test_q_learning():
             x = s[0]-7
             y = s[1]-8
             return [x**2, y**2, 1]
-    q = QLearning(env, (0,0), 0.5, 0.3, 0.5, obs_func)
+    q = QLearning(env, (0,0), 0.2, 0.8, 0.5, obs_func)
     start = time.time_ns()
     for i in range(n := 500):
         q.episode()
@@ -126,9 +126,9 @@ def test_q_learning():
 
 #test_tdlambda()
 #test_monte_carlo()
-#test_q_learning()
+test_q_learning()
 
-def test_q_hyperparams():
+def generate_q_hyperparams():
     rewards = {
             (7,8):1
             }
@@ -139,10 +139,10 @@ def test_q_hyperparams():
     def obs_func(s):
             x = s[0]-7
             y = s[1]-8
-            return [x**2, y**2, 1]
+            return [x, y, x**2, y**2, x*y, 1]
 
     import statistics
-    hyperparam_space = np.zeros((10, 11))
+    hyperparam_space = np.zeros((9, 11))
     e = 1
     d = 0
     while (e <= 9):
@@ -154,7 +154,7 @@ def test_q_hyperparams():
                 for episodes in range(500):
                     q_solver.episode()
                 ratio.append(q_solver.state_value_approx((7,8)) / q_solver.state_value_approx((0,0)))
-            hyperparam_space[e][d] = statistics.median(ratio)
+            hyperparam_space[e-1][d] = statistics.median(ratio)
             d += 1
             end = time.time_ns()
             print(d)
@@ -164,29 +164,11 @@ def test_q_hyperparams():
         d = 0
     
     print(hyperparam_space)
-    
-    x = np.linspace(0.0, 1.0, num=11)
-    y = np.linspace(0.1, 1.0, num=10)
 
-    extent = [x[0], x[-1], y[0], y[-1]]
+#generate_q_hyperparams()
 
-    plt.imshow(
-        hyperparam_space,
-        extent=extent,
-        aspect="auto",
-        origin="lower"
-    )
-    
-    plt.imshow(hyperparam_space, origin="lower")
-    plt.colorbar()
-    plt.xlabel("discount factor")
-    plt.ylabel("epsilon")
-    plt.title("Ratio of value func approx of the terminal state to initial state")
-    plt.show()
-
-# test_q_hyperparams()
-
-def test_q_hyperparams_log():
+def plot_q_hyperparams():
+    # using obs vector [x^2, y^2, 1]
     hyperparam_space = np.array([
     [  -2.41482   , 20.81079   , -29.69531   , 128.57922   ,  -4.20834   ,  -1.41246   ,
       -1.21603   ,  -1.29426   , -11.77985   ,   6.3966    ,   1.        ],
@@ -207,6 +189,28 @@ def test_q_hyperparams_log():
     [  -6.15872   ,  -7.09923   ,  -1.74112   , -14.40401   ,  -1.4704    ,  -1.13041   ,
       -2.31638   ,  -1.01378   ,  -1.41869   ,  -1.76237   ,   1.        ]
     ])
+    
+    # using obs vector [x, y, x^2, y^2, xy, 1]
+    '''hyperparam_space = np.array(
+        [[   -3.12507 ,   62.43841  ,-174.84073 ,18767.13102 ,   -4.39889 ,   -1.10652,
+     -4.74149  ,  -2.06048  , -75.94642  ,   5.6789  ,    0.99995],
+ [   43.79638  ,   9.42516 , -133.94528  ,  -2.16849  ,  11.47432 , 3564.77817,
+   4713.9858   ,  11.79562  ,  25.53245  ,  41.19207  ,   1.     ],
+ [  -20.10007  ,   6.12953  ,  10.51278  ,   3.03494  ,   4.28118 ,  558.27452,
+      3.97216  ,-178.59997  ,  17.40123  ,  14.15351  ,   1.     ],
+ [    2.92032  , 201.72741 ,   -3.07525  ,   8.03679  ,  34.69949  ,  13.06222,
+    -46.07467  , -16.24846 ,  -39.4147   ,   5.62648  ,   0.99994],
+ [    3.36023  ,   2.24585  ,  -9.58686  ,   5.48952  ,  10.66742  ,   3.78712,
+     -7.07662  , -10.87934 ,  -83.80517  , -51.15205  ,   0.99987],
+ [   13.82672  ,  19.04703  ,   2.24419  ,  -4.88822  ,  16.17687  ,  31.4028,
+      7.76619  ,   5.09752 ,    5.87849  ,  64.47205   ,  0.99995],
+ [    6.91254   ,-30.76004  ,   5.71563  ,   2.46369   ,  5.70714  ,   4.45834,
+     14.807    , 181.23092  ,  11.78195  ,  10.11377  ,   0.99993],
+ [    2.36722  ,   3.92349  ,   4.22839  ,  79.14549  , -42.86587  ,   6.40321,
+     12.00872 ,    3.41015  ,  11.83967  ,  18.09581  ,   1.     ],
+ [   28.24229 , -141.52049  ,  32.69988  , -27.10098  ,   7.07983  ,   3.2841,
+      9.37815  ,   6.53937   ,  4.38028  ,   4.53396  ,   0.99999]]
+    )'''
 
     def symlog(x):
         if (x>1):
@@ -230,7 +234,7 @@ def test_q_hyperparams_log():
     plt.colorbar()
     plt.xlabel("discount factor")
     plt.ylabel("epsilon")
-    plt.title("symlog(V(terminal state) / V(initial state)),\nmedian of 5 trials, 500 episodes")
+    plt.title("symlog(V(terminal state) / V(initial state)),\nmedian of 5 trials, 500 episodes,\nO(x) = [x^2,y^2,1]")
     plt.show()
     
-test_q_hyperparams_log()
+#plot_q_hyperparams()
