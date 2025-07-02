@@ -1,17 +1,15 @@
 from environment import Actions
-import random
 import numpy as np
 from numpy.linalg import LinAlgError
 
 class QLearning:
     # Implements the Q Learning policy improvement algorithm with state-value function approximation
 
-    def __init__(self, env, initial_state, epsilon, discount_factor, step_size, obs_func, max_timestep=10000):
+    def __init__(self, env, initial_state, obs_func, epsilon, discount_factor, max_timestep=10000):
         self.env = env
         self.initial_state = initial_state
         self.epsilon = epsilon               # Random exploration factor in epsilon-greedy behavior policy
         self.discount_factor = discount_factor
-        self.step_size = step_size
         self.max_timestep = max_timestep
         self.state = initial_state
         self.action_value_dict = dict()      # map: (action, (x,y)) -> float
@@ -109,3 +107,7 @@ class QLearning:
             print("Path:")
             print(path)
             print(f"Path length is {len(path)}")
+
+
+class Reinforce:
+    pass

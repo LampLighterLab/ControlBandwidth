@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import math
 from environment import Actions, Gridworld
 from value_estimator import MonteCarlo, TDLambda
 from control_method import QLearning
-import math
 
 def plot_values(solver_object, value_func):
     arr = np.zeros((solver_object.env.SIZE_Y, solver_object.env.SIZE_X))
@@ -27,11 +27,12 @@ def test_monte_carlo():
         (5,5)
         ]
     env = Gridworld(rewards, terminal_states, size=(10,8))
+    initial_state = (0,0)
 
     def up_policy(s):
         return Actions.UP
 
-    mc = MonteCarlo(env.generate_random_action, (0,0), env, discount_factor=0.9)
+    mc = MonteCarlo(env.generate_random_action, initial_state, env, discount_factor=0.9)
 
     start = time.time_ns()
     for i in range(n := 100):
@@ -49,11 +50,12 @@ def test_tdlambda():
         (5,5)
         ]
     env = Gridworld(rewards, terminal_states, size=(10,8), control_freq=5)
+    initial_state = (0,0)
 
     def up_policy(s):
         return Actions.UP
 
-    td = TDLambda(env.generate_random_action, (0,0), env, discount_factor=0.9, learning_rate=0.1, trace_decay=0.5)
+    td = TDLambda(env.generate_random_action, initial_state, env, discount_factor=0.9, learning_rate=0.1, trace_decay=0.5)
 
     start = time.time_ns()
     for i in range(n := 100):
@@ -71,20 +73,20 @@ def test_q_learning():
         (7,8)
         ]
     env = Gridworld(rewards, terminal_states, size=(10,10))
+    initial_state = (0,0)
     def obs_func(s):
             x = s[0]-7
             y = s[1]-8
             return [x**2, y**2, 1]
-    q = QLearning(env, (0,0), 0.2, 0.8, 0.5, obs_func)
+    q = QLearning(env, initial_state, obs_func, epsilon=0.8, discount_factor=0.9)
     start = time.time_ns()
     for i in range(n := 500):
         q.run_episode()
-    print(q.weights)
-    q.get_optimal_path()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
     
+    # make plot
     solver_obj = q
     arr = np.zeros((solver_obj.env.SIZE_Y, solver_obj.env.SIZE_X))
     for i in range(solver_obj.env.SIZE_Y):
@@ -123,11 +125,6 @@ def test_q_learning():
     q.optimal_path()
     plt.show() """
 
-
-#test_tdlambda()
-#test_monte_carlo()
-test_q_learning()
-
 def generate_q_hyperparams():
     rewards = {
             (7,8):1
@@ -149,7 +146,7 @@ def generate_q_hyperparams():
         while (d <= 10):
             start = time.time_ns()
             for trials in range(5):
-                q_solver = QLearning(env, (0,0), e/10, d/10, 0.5, obs_func)
+                q_solver = QLearning(env, (0,0), obs_func, epsilon=e/10, discount_factor=d/10)
                 ratio = list()
                 for episodes in range(500):
                     q_solver.run_episode()
@@ -164,8 +161,6 @@ def generate_q_hyperparams():
         d = 0
     
     print(hyperparam_space)
-
-#generate_q_hyperparams()
 
 def plot_q_hyperparams():
     # using obs vector [x^2, y^2, 1]
@@ -237,4 +232,8 @@ def plot_q_hyperparams():
     plt.title("symlog(V(terminal state) / V(initial state)),\nmedian of 5 trials, 500 episodes,\nO(x) = [x^2,y^2,1]")
     plt.show()
     
+#test_tdlambda()
+#test_monte_carlo()
+test_q_learning()
+#generate_q_hyperparams()
 #plot_q_hyperparams()

@@ -1,6 +1,3 @@
-import environment
-from environment import Actions
-import random
 import math
 
 class MonteCarlo:
