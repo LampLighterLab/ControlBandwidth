@@ -26,7 +26,7 @@ def test_monte_carlo():
     terminal_states = [
         (5,5)
         ]
-    env = Gridworld(rewards, terminal_states, 10, 8)
+    env = Gridworld(rewards, terminal_states, size=(10,8))
 
     def up_policy(s):
         return Actions.UP
@@ -48,7 +48,7 @@ def test_tdlambda():
     terminal_states = [
         (5,5)
         ]
-    env = Gridworld(rewards, terminal_states, 10, 8, 5)
+    env = Gridworld(rewards, terminal_states, size=(10,8), control_freq=5)
 
     def up_policy(s):
         return Actions.UP
@@ -70,7 +70,7 @@ def test_q_learning():
     terminal_states = [
         (7,8)
         ]
-    env = Gridworld(rewards, terminal_states, 10, 10)
+    env = Gridworld(rewards, terminal_states, size=(10,10))
     def obs_func(s):
             x = s[0]-7
             y = s[1]-8
@@ -78,9 +78,9 @@ def test_q_learning():
     q = QLearning(env, (0,0), 0.2, 0.8, 0.5, obs_func)
     start = time.time_ns()
     for i in range(n := 500):
-        q.episode()
+        q.run_episode()
     print(q.weights)
-    q.optimal_path()
+    q.get_optimal_path()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
@@ -135,7 +135,7 @@ def generate_q_hyperparams():
     terminal_states = [
         (7,8)
         ]
-    env = Gridworld(rewards, terminal_states, 10, 10)
+    env = Gridworld(rewards, terminal_states, size=(10,10))
     def obs_func(s):
             x = s[0]-7
             y = s[1]-8
@@ -152,7 +152,7 @@ def generate_q_hyperparams():
                 q_solver = QLearning(env, (0,0), e/10, d/10, 0.5, obs_func)
                 ratio = list()
                 for episodes in range(500):
-                    q_solver.episode()
+                    q_solver.run_episode()
                 ratio.append(q_solver.state_value_approx((7,8)) / q_solver.state_value_approx((0,0)))
             hyperparam_space[e-1][d] = statistics.median(ratio)
             d += 1

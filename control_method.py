@@ -28,14 +28,12 @@ class QLearning:
         return sum
     
     def action_value_approx(self, a, s):
-        next_state = self.env.next_state(a, s)
-        return self.env.state_reward(s) + self.discount_factor*self.env.state_reward(next_state)
+        next_state = self.env.get_next_state(a, s)
+        return self.env.get_state_reward(s) + self.discount_factor*self.env.get_state_reward(next_state)
     
     # Find least squares solution for weights using TD(0) error
     # states, rewards are lists of their values in an episode
     def update_weights(self, states, rewards):
-        np.set_printoptions(suppress=True, precision=5)
-
         outer_prod = np.zeros((len(self.weights), len(self.weights)))
         r_vec = np.zeros(len(self.weights))
         for i in range(len(states)-1):
@@ -72,7 +70,7 @@ class QLearning:
                 straight_steps_left = self.env.control_freq
                 max_q_val = self.action_value_approx(next_action, self.state)
                 max_action = next_action
-                for action in self.env.valid_actions(self.state):
+                for action in self.env.get_valid_actions(self.state):
                     if (self.action_value_approx(action, self.state) > max_q_val):
                         max_q_val = self.action_value_approx(action, self.state)
                         max_action = action
@@ -84,7 +82,7 @@ class QLearning:
             next_state = self.env.get_next_state(next_action, self.state)
             
             states.append(self.state)
-            rewards.append(self.env.action_reward(next_action, self.state))
+            rewards.append(self.env.get_action_reward(next_action, self.state))
             self.state = next_state
             stepnum += 1
             straight_steps_left -= 1
@@ -97,12 +95,11 @@ class QLearning:
         curr_state = self.initial_state
         while (curr_state not in path and curr_state not in self.env.terminal_states):
             path.append(curr_state)
-            random_action = self.random_generator.choice(self.env.valid_actions(curr_state))
-            max_q_val = self.action_value(random_action, curr_state)
-            max_action = random_action
-            for action in self.env.valid_actions(curr_state):
-                if (self.action_value(action, curr_state) > max_q_val):
-                    max_q_val = self.action_value(action, curr_state)
+            max_action = self.env.get_valid_actions(curr_state)[0]
+            max_q_val = self.get_action_value(max_action, curr_state)
+            for action in self.env.get_valid_actions(curr_state):
+                if (self.get_action_value(action, curr_state) > max_q_val):
+                    max_q_val = self.get_action_value(action, curr_state)
                     max_action = action
             curr_state = self.env.get_next_state(max_action, curr_state)
         if curr_state in path:
