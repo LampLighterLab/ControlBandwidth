@@ -1,11 +1,12 @@
 from environment import Actions
 import numpy as np
 from numpy.linalg import LinAlgError
+import math
 
 class QLearning:
     # Implements the Q Learning policy improvement algorithm with state-value function approximation
 
-    def __init__(self, env, initial_state, obs_func, epsilon, discount_factor, max_timestep=10000):
+    def __init__(self, env, obs_func, initial_state, epsilon, discount_factor, max_timestep=10000):
         self.env = env
         self.initial_state = initial_state
         self.epsilon = epsilon               # Random exploration factor in epsilon-greedy behavior policy
@@ -15,7 +16,7 @@ class QLearning:
         self.action_value_dict = dict()      # map: (action, (x,y)) -> float
         self.random_generator = np.random.default_rng(1234526)
         
-        self.obs_vector = obs_func
+        self.obs_vector = obs_func           # function: tuple (state) -> tuple (feature vector)
         self.weights = [0] * len(obs_func(initial_state))
     
     def state_value_approx(self, s):
@@ -65,7 +66,7 @@ class QLearning:
         while (stepnum < self.max_timestep and self.state not in self.env.terminal_states):
             # Generate next action, state according to epsilon-greedy policy
             if (straight_steps_remaining == 0):
-                straight_steps_left = self.env.control_freq
+                straight_steps_remaining = self.env.control_freq
                 max_q_val = self.action_value_approx(next_action, self.state)
                 max_action = next_action
                 for action in self.env.get_valid_actions(self.state):
@@ -77,13 +78,13 @@ class QLearning:
                     next_action = self.env.generate_random_action(self.state)
                 else:
                     next_action = max_action
+                states.append(self.state)
+                rewards.append(self.env.get_action_reward(next_action, self.state))
             next_state = self.env.get_next_state(next_action, self.state)
             
-            states.append(self.state)
-            rewards.append(self.env.get_action_reward(next_action, self.state))
             self.state = next_state
             stepnum += 1
-            straight_steps_left -= 1
+            straight_steps_remaining -= 1
         self.update_weights(states, rewards)
         
         # Handle terminal state
@@ -110,4 +111,72 @@ class QLearning:
 
 
 class Reinforce:
-    pass
+    # REINFORCE algorithm using the softmax policy
+    
+    def __init__(self, env, obs_func, initial_state, discount_factor, temperature, max_timestep=10000):
+        self.env = env
+        self.initial_state = initial_state
+        self.state = initial_state
+        self.discount_factor = discount_factor
+        self.max_timestep = max_timestep
+        self.temperature = temperature
+        
+        self.state_feature_vector = obs_func
+        self.weights = [0] * len(self.state_feature_vector(initial_state))
+        self.random_generator = np.random.default_rng(123456)
+
+    # Define feature(s,a) = self.obs_vector(next_state(s,a))
+    def feature_vector(self, action, state):
+        next_state = self.env.get_next_state(action, state)
+        return self.state_feature_vector(next_state)
+
+    def get_action_probs(self, state):
+        valid_actions = self.env.get_valid_actions(state)
+        action_probs = list()
+        sum_weights = 0
+        for action in valid_actions:
+            feature_scalar = np.dot(self.weights, self.feature_vector(action, state))
+            weight = math.exp(feature_scalar / self.temperature)
+            action_probs.append(weight)
+            sum_weights += weight
+        for i in range(len(action_probs)):
+            action_probs[i] = action_probs[i] / sum_weights
+        return (valid_actions, action_probs)
+    
+    # ? Is using the same score function for the softmax function valid given that I'm only using a state-feature vector?
+    def score_function(self, action, state):
+        action_probs_tuple = self.get_action_probs(state)
+        valid_actions = action_probs_tuple[0]
+        action_probs = action_probs_tuple[1]
+        gradient_log_policy = self.feature_vector(state)
+        for i in range(valid_actions):
+            gradient_log_policy -= np.multiply(action_probs[i], self.feature_vector(valid_actions[i], state))
+        return gradient_log_policy
+    
+    def run_episode(self):
+        self.state = self.initial_state
+        stepnum = 0
+        straight_steps_remaining = 0
+        states = list()
+        rewards = list()
+        while (stepnum < self.max_timestep and self.state not in self.env.terminal_states):
+            # Generate next action, state according to parameterized policy
+            if (straight_steps_remaining == 0):
+                straight_steps_remaining = self.env.control_freq
+                action_probs_tuple = self.get_action_probs(self.state)
+                valid_actions = action_probs_tuple[0]
+                action_probs = action_probs_tuple[1]
+                next_action = self.random_generator.choice(valid_actions, p=action_probs)
+                states.append(self.state)
+                rewards.append(self.env.get_action_reward(next_action, self.state))
+            self.state = self.env.get_next_state(next_action, self.state)
+            stepnum += 1
+            straight_steps_remaining -= 1
+        
+        # Handle terminal state
+        states.append(self.state)
+        rewards.append(self.env.get_state_reward(self.state))
+        
+        # Calculate returns v_t for all t, but work backwards
+        
+        # Update weights

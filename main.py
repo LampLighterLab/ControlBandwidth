@@ -21,12 +21,12 @@ def plot_values(solver_object, value_func):
 
 def test_monte_carlo():
     rewards = {
-            (5,5):1
+            (6,6):1
             }
     terminal_states = [
-        (5,5)
+        (6,6)
         ]
-    env = Gridworld(rewards, terminal_states, size=(10,8))
+    env = Gridworld(rewards, terminal_states, size=(10,8), control_freq=2)
     initial_state = (0,0)
 
     def up_policy(s):
@@ -67,18 +67,17 @@ def test_tdlambda():
     
 def test_q_learning():
     rewards = {
-            (7,8):1
+            (8,8):1
             }
     terminal_states = [
-        (7,8)
+        (8,8)
         ]
-    env = Gridworld(rewards, terminal_states, size=(10,10))
-    initial_state = (0,0)
+    env = Gridworld(rewards, terminal_states, size=(10,10), control_freq=2)
     def obs_func(s):
             x = s[0]-7
             y = s[1]-8
             return [x**2, y**2, 1]
-    q = QLearning(env, initial_state, obs_func, epsilon=0.8, discount_factor=0.9)
+    q = QLearning(env, obs_func, initial_state=(0,0), epsilon=0.8, discount_factor=0.9)
     start = time.time_ns()
     for i in range(n := 500):
         q.run_episode()
@@ -146,7 +145,7 @@ def generate_q_hyperparams():
         while (d <= 10):
             start = time.time_ns()
             for trials in range(5):
-                q_solver = QLearning(env, (0,0), obs_func, epsilon=e/10, discount_factor=d/10)
+                q_solver = QLearning(env, obs_func, initial_state=(0,0),  epsilon=e/10, discount_factor=d/10)
                 ratio = list()
                 for episodes in range(500):
                     q_solver.run_episode()
@@ -232,8 +231,9 @@ def plot_q_hyperparams():
     plt.title("symlog(V(terminal state) / V(initial state)),\nmedian of 5 trials, 500 episodes,\nO(x) = [x^2,y^2,1]")
     plt.show()
     
-#test_tdlambda()
 #test_monte_carlo()
+#test_tdlambda()
 test_q_learning()
 #generate_q_hyperparams()
 #plot_q_hyperparams()
+
