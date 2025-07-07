@@ -262,7 +262,7 @@ def test_reinforce():
     reinforce_solver = Reinforce(env, feature_vector=feature_vector, initial_state=(0,0),
                                  discount_factor=0.9, step_size=0.2, temperature=10)
     start = time.time_ns()
-    for i in range(n := 10):
+    for i in range(n := 100):
         reinforce_solver.run_episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
