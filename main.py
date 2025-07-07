@@ -4,7 +4,7 @@ import time
 import math
 from environment import Actions, Gridworld
 from value_estimator import MonteCarlo, TDLambda
-from control_method import QLearning
+from control_method import QLearning, Reinforce
 
 def plot_values(solver_object, value_func):
     arr = np.zeros((solver_object.env.SIZE_Y, solver_object.env.SIZE_X))
@@ -230,10 +230,75 @@ def plot_q_hyperparams():
     plt.ylabel("epsilon")
     plt.title("symlog(V(terminal state) / V(initial state)),\nmedian of 5 trials, 500 episodes,\nO(x) = [x^2,y^2,1]")
     plt.show()
+
+def test_reinforce():
+    rewards = {
+            (7,8):1
+            }
+    terminal_states = [
+        (7,8)
+        ]
+    env = Gridworld(rewards, terminal_states, size=(10,10), control_freq=1)
     
+    # Feature vector: (x^2 * 1(Actions.UP), x^2 * 1(Actions.RIGHT), ...
+    #                  y^2 * 1(Actions.UP), ...
+    #                  1 * 1(Actions.UP), ...)
+    def feature_vector(a, s):
+        x = s[0]-7
+        y = s[1]-8
+        state_features = [x**2, y**2, 1]
+        actions = [Actions.UP, Actions.RIGHT, Actions.DOWN, Actions.LEFT]
+        action_indicators = list()
+        for action in actions:
+            if a is action:
+                action_indicators.append(1)
+            else:
+                action_indicators.append(0)
+        feature_vec = list()
+        for i in range(4 * len(state_features)):
+            feature_vec.append(state_features[i // 4] * action_indicators[i % 4])
+        return feature_vec
+    
+    reinforce_solver = Reinforce(env, feature_vector=feature_vector, initial_state=(0,0),
+                                 discount_factor=0.9, step_size=0.2, temperature=10)
+    start = time.time_ns()
+    for i in range(n := 10):
+        reinforce_solver.run_episode()
+    end = time.time_ns()
+    print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
+    print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
+    print(reinforce_solver.weights)
+    reinforce_solver.get_path()
+    
+    # Plot probabilities of picking an action for each state
+    actions_list = (Actions.UP, Actions.RIGHT, Actions.DOWN, Actions.LEFT)
+    probs = np.zeros(shape=(4, env.SIZE_Y, env.SIZE_X))
+    for x in range(env.SIZE_X):
+        for y in range(env.SIZE_Y):
+            action_probs_tuple = reinforce_solver.get_action_probs((x,y))
+            valid_actions = action_probs_tuple[0]
+            action_probs = action_probs_tuple[1]
+            for i in range(len(valid_actions)):
+                probs[valid_actions[i].value][y][x] = action_probs[i]
+    
+    action_names = ["Up", "Right", "Down", "Left"]
+    fig, axs = plt.subplots(2, 2)
+
+    for ax, action_name, i in zip(axs.flat, action_names, range(4)):
+        ax.set_title(action_name)
+        im = ax.imshow(probs[i], vmin=0, vmax=1, origin="lower")
+    
+    fig.suptitle("Action Probabilities by State")
+    fig.subplots_adjust(right=0.8)
+    cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+    fig.colorbar(im, cax=cbar_ax)
+    
+    plt.subplots_adjust(hspace=0.3)
+    plt.show()
+
 #test_monte_carlo()
 #test_tdlambda()
-test_q_learning()
+#test_q_learning()
 #generate_q_hyperparams()
 #plot_q_hyperparams()
-
+test_reinforce()

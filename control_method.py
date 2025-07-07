@@ -113,23 +113,20 @@ class QLearning:
 class Reinforce:
     # REINFORCE algorithm using the softmax policy
     
-    def __init__(self, env, obs_func, initial_state, discount_factor, temperature, max_timestep=10000):
+    def __init__(self, env, feature_vector, initial_state, discount_factor, step_size, temperature, max_timestep=10000):
         self.env = env
         self.initial_state = initial_state
         self.state = initial_state
         self.discount_factor = discount_factor
-        self.max_timestep = max_timestep
+        self.step_size = step_size
         self.temperature = temperature
+        self.max_timestep = max_timestep
         
-        self.state_feature_vector = obs_func
-        self.weights = [0] * len(self.state_feature_vector(initial_state))
+        self.feature_vector = feature_vector
+        self.weights = [0] * len(self.feature_vector(Actions.UP, initial_state))
         self.random_generator = np.random.default_rng(123456)
 
-    # Define feature(s,a) = self.obs_vector(next_state(s,a))
-    def feature_vector(self, action, state):
-        next_state = self.env.get_next_state(action, state)
-        return self.state_feature_vector(next_state)
-
+    # Return the set of valid actions and their probabilities according to policy
     def get_action_probs(self, state):
         valid_actions = self.env.get_valid_actions(state)
         action_probs = list()
@@ -143,14 +140,15 @@ class Reinforce:
             action_probs[i] = action_probs[i] / sum_weights
         return (valid_actions, action_probs)
     
-    # ? Is using the same score function for the softmax function valid given that I'm only using a state-feature vector?
+    # Calculate value of score function to be used in updating weights
     def score_function(self, action, state):
         action_probs_tuple = self.get_action_probs(state)
         valid_actions = action_probs_tuple[0]
         action_probs = action_probs_tuple[1]
-        gradient_log_policy = self.feature_vector(state)
-        for i in range(valid_actions):
-            gradient_log_policy -= np.multiply(action_probs[i], self.feature_vector(valid_actions[i], state))
+        gradient_log_policy = self.feature_vector(action, state)
+        for i in range(len(valid_actions)):
+            gradient_log_policy = np.subtract(gradient_log_policy,
+                                              np.multiply(action_probs[i], self.feature_vector(valid_actions[i], state)))
         return gradient_log_policy
     
     def run_episode(self):
@@ -158,6 +156,7 @@ class Reinforce:
         stepnum = 0
         straight_steps_remaining = 0
         states = list()
+        actions = list()
         rewards = list()
         while (stepnum < self.max_timestep and self.state not in self.env.terminal_states):
             # Generate next action, state according to parameterized policy
@@ -168,15 +167,43 @@ class Reinforce:
                 action_probs = action_probs_tuple[1]
                 next_action = self.random_generator.choice(valid_actions, p=action_probs)
                 states.append(self.state)
+                actions.append(next_action)
                 rewards.append(self.env.get_action_reward(next_action, self.state))
             self.state = self.env.get_next_state(next_action, self.state)
             stepnum += 1
             straight_steps_remaining -= 1
         
         # Handle terminal state
-        states.append(self.state)
-        rewards.append(self.env.get_state_reward(self.state))
+        if (self.state in self.env.terminal_states):
+            states.append(self.state)
         
-        # Calculate returns v_t for all t, but work backwards
-        
-        # Update weights
+        # Calculate returns and update weights
+        i = len(states) - 1
+        return_i = 0
+        while (i > 0):
+            i -= 1
+            return_i = rewards[i] + self.discount_factor*return_i
+            self.weights = np.add(self.weights,
+                                  self.step_size*return_i*self.score_function(actions[i], states[i]))
+    
+    # Generate a sample episode without updating weights and print the path taken
+    def get_path(self):
+        states = list()
+        stepnum = 0
+        straight_steps_remaining = 0
+        state = self.initial_state
+        while (stepnum < self.max_timestep and state not in self.env.terminal_states):
+            # Generate next action, state according to parameterized policy
+            if (straight_steps_remaining == 0):
+                straight_steps_remaining = self.env.control_freq
+                action_probs_tuple = self.get_action_probs(state)
+                valid_actions = action_probs_tuple[0]
+                action_probs = action_probs_tuple[1]
+                next_action = self.random_generator.choice(valid_actions, p=action_probs)
+                states.append(state)
+            state = self.env.get_next_state(next_action, state)
+            stepnum += 1
+            straight_steps_remaining -= 1
+        if (state in self.env.terminal_states):
+            states.append(state)
+        print(states)

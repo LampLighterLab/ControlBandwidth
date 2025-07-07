@@ -1,12 +1,12 @@
 from enum import Enum
 import numpy as np
 
-# Set of actions that can be taken. The assigned values are meaningless
+# Set of actions that can be taken
 class Actions(Enum):
-    UP = 1
-    RIGHT = 2
-    DOWN = 3
-    LEFT = 4
+    UP = 0
+    RIGHT = 1
+    DOWN = 2
+    LEFT = 3
 
 # Should not occur if everything goes right
 class IllegalActionException(Exception):
