@@ -113,7 +113,7 @@ class QLearning:
 class Reinforce:
     # REINFORCE algorithm using the softmax policy
     
-    def __init__(self, env, feature_vector, initial_state, discount_factor, step_size, temperature, max_timestep=10000):
+    def __init__(self, env, initial_state, discount_factor, step_size, temperature, max_timestep=10000):
         self.env = env
         self.initial_state = initial_state
         self.state = initial_state
@@ -122,8 +122,21 @@ class Reinforce:
         self.temperature = temperature
         self.max_timestep = max_timestep
         
+        # Hopefully speed up the process of calculating feature vector
+        # feature_matrix[0] is a lambda exp that returns the feature vector given the action is Actions.UP, etc...
+        self.feature_matrix = list()
+        self.state_features = lambda x,y: [x**2, y**2, 1, x, y, x*y]
+        num_state_features = len(self.state_features(0,0))
+        for i in range(4):
+            self.feature_matrix.append(
+                lambda x,y: [0]*num_state_features*(i) + self.state_features(x,y) + [0]*num_state_features*(3-i)
+            )
+        
+        def feature_vector(a, s):
+            return self.feature_matrix[a.value](s[0] - 7, s[1] - 8)
         self.feature_vector = feature_vector
         self.weights = [0] * len(self.feature_vector(Actions.UP, initial_state))
+        
         self.random_generator = np.random.default_rng(123456)
 
     # Return the set of valid actions and their probabilities according to policy
@@ -140,7 +153,7 @@ class Reinforce:
             action_probs[i] = action_probs[i] / sum_weights
         return (valid_actions, action_probs)
     
-    # Calculate value of score function to be used in updating weights
+    # Calculate value of score function to be used in updating weights. 
     def score_function(self, action, state):
         action_probs_tuple = self.get_action_probs(state)
         valid_actions = action_probs_tuple[0]
@@ -169,6 +182,11 @@ class Reinforce:
                 states.append(self.state)
                 actions.append(next_action)
                 rewards.append(self.env.get_action_reward(next_action, self.state))
+                #print(self.state)
+                #print(valid_actions)
+                #print(action_probs)
+                #print(next_action)
+                #print()
             self.state = self.env.get_next_state(next_action, self.state)
             stepnum += 1
             straight_steps_remaining -= 1
@@ -186,7 +204,6 @@ class Reinforce:
             self.weights = np.add(self.weights,
                                   self.step_size*return_i*self.score_function(actions[i], states[i]))
     
-    # Generate a sample episode without updating weights and print the path taken
     def get_path(self):
         states = list()
         stepnum = 0

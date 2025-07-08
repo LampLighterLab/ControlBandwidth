@@ -243,10 +243,12 @@ def test_reinforce():
     # Feature vector: (x^2 * 1(Actions.UP), x^2 * 1(Actions.RIGHT), ...
     #                  y^2 * 1(Actions.UP), ...
     #                  1 * 1(Actions.UP), ...)
+    
+    # ! this is taking most of the computation time
     def feature_vector(a, s):
         x = s[0]-7
         y = s[1]-8
-        state_features = [x**2, y**2, 1]
+        state_features = [x**2, y**2, 1, x, y, x*y]
         actions = [Actions.UP, Actions.RIGHT, Actions.DOWN, Actions.LEFT]
         action_indicators = list()
         for action in actions:
@@ -256,13 +258,13 @@ def test_reinforce():
                 action_indicators.append(0)
         feature_vec = list()
         for i in range(4 * len(state_features)):
-            feature_vec.append(state_features[i // 4] * action_indicators[i % 4])
+            feature_vec.append(state_features[i % len(state_features)] * action_indicators[i // len(state_features)])
         return feature_vec
     
-    reinforce_solver = Reinforce(env, feature_vector=feature_vector, initial_state=(0,0),
+    reinforce_solver = Reinforce(env, initial_state=(0,0),
                                  discount_factor=0.9, step_size=0.2, temperature=10)
     start = time.time_ns()
-    for i in range(n := 100):
+    for i in range(n := 2000):
         reinforce_solver.run_episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
@@ -302,3 +304,14 @@ def test_reinforce():
 #generate_q_hyperparams()
 #plot_q_hyperparams()
 test_reinforce()
+
+num_state_features = 6
+feature_matrix = list()
+state_features = lambda x,y: [x**2, y**2, 1, x, y, x*y]
+for i in range(4):
+    feature_matrix.append(
+        lambda x,y: [0]*num_state_features*(i) + state_features(x,y) + [0]*num_state_features*(3-i)
+    )
+
+for i in range(4):
+    print(feature_matrix[i](2,3))
