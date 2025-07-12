@@ -264,16 +264,15 @@ def test_reinforce():
     reinforce_solver = Reinforce(env, initial_state=(0,0),
                                  discount_factor=0.9, step_size=0.2, temperature=10)
     start = time.time_ns()
-    for i in range(n := 2000):
+    for i in range(n := 100):
         reinforce_solver.run_episode()
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
-    print(reinforce_solver.weights)
+    print("Sample path:")
     reinforce_solver.get_path()
     
     # Plot probabilities of picking an action for each state
-    actions_list = (Actions.UP, Actions.RIGHT, Actions.DOWN, Actions.LEFT)
     probs = np.zeros(shape=(4, env.SIZE_Y, env.SIZE_X))
     for x in range(env.SIZE_X):
         for y in range(env.SIZE_Y):
@@ -304,14 +303,3 @@ def test_reinforce():
 #generate_q_hyperparams()
 #plot_q_hyperparams()
 test_reinforce()
-
-num_state_features = 6
-feature_matrix = list()
-state_features = lambda x,y: [x**2, y**2, 1, x, y, x*y]
-for i in range(4):
-    feature_matrix.append(
-        lambda x,y: [0]*num_state_features*(i) + state_features(x,y) + [0]*num_state_features*(3-i)
-    )
-
-for i in range(4):
-    print(feature_matrix[i](2,3))

@@ -122,18 +122,12 @@ class Reinforce:
         self.temperature = temperature
         self.max_timestep = max_timestep
         
-        # Hopefully speed up the process of calculating feature vector
-        # feature_matrix[0] is a lambda exp that returns the feature vector given the action is Actions.UP, etc...
-        self.feature_matrix = list()
-        self.state_features = lambda x,y: [x**2, y**2, 1, x, y, x*y]
-        num_state_features = len(self.state_features(0,0))
-        for i in range(4):
-            self.feature_matrix.append(
-                lambda x,y: [0]*num_state_features*(i) + self.state_features(x,y) + [0]*num_state_features*(3-i)
-            )
-        
         def feature_vector(a, s):
-            return self.feature_matrix[a.value](s[0] - 7, s[1] - 8)
+            x = s[0] - 7
+            y = s[1] - 8
+            i = a.value
+            num_state_features = 6
+            return [0]*num_state_features*(i) + [x**2, y**2, 1, x, y, x*y] + [0]*num_state_features*(3-i)
         self.feature_vector = feature_vector
         self.weights = [0] * len(self.feature_vector(Actions.UP, initial_state))
         
