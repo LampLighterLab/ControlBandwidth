@@ -5,6 +5,7 @@ import math
 from environment import Actions, Gridworld
 from value_estimator import MonteCarlo, TDLambda
 from control_method import QLearning, Reinforce
+from inverted_pendulum import InvertedPendulum
 
 def plot_values(solver_object, value_func):
     arr = np.zeros((solver_object.env.SIZE_Y, solver_object.env.SIZE_X))
@@ -120,6 +121,7 @@ def test_q_learning():
         ax.set_title(f"Action: {name}")
 
     plt.tight_layout()
+    
     
     q.optimal_path()
     plt.show() """
@@ -284,7 +286,6 @@ def test_reinforce():
     
     action_names = ["Up", "Right", "Down", "Left"]
     fig, axs = plt.subplots(2, 2)
-
     for ax, action_name, i in zip(axs.flat, action_names, range(4)):
         ax.set_title(action_name)
         im = ax.imshow(probs[i], vmin=0, vmax=1, origin="lower")
@@ -297,9 +298,39 @@ def test_reinforce():
     plt.subplots_adjust(hspace=0.3)
     plt.show()
 
+def test_pendulum():
+    params = {
+        "mass": 1,
+        "length": 1,
+        "gravity": 1
+        }
+    def value_func(vel, pos):
+        return 0
+    pendulum_solver = InvertedPendulum(
+        params, initial_state=(0.1,0), value_func=value_func, sim_timestep=0.005, control_timestep=0.1
+        )
+    
+    states = [(0.1, 0.5*np.pi)]
+    curr_state = states[0]
+    for i in range(n := 50):
+        curr_state = pendulum_solver.get_next_state(0, curr_state)
+        states.append(curr_state)
+    states = np.array(states)
+    states = states.T
+    states[1] = np.mod(states[1], 2 * np.pi)
+    
+    timesteps = np.arange(n+1)
+    plt.scatter(states[0], states[1], c=timesteps)
+    plt.title("State space")
+    plt.colorbar(label="Timestep")
+    plt.xlabel("vel")
+    plt.ylabel("pos")
+    plt.show()
+
 #test_monte_carlo()
 #test_tdlambda()
 #test_q_learning()
 #generate_q_hyperparams()
 #plot_q_hyperparams()
 test_reinforce()
+#test_pendulum()
