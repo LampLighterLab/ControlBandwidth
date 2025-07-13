@@ -33,13 +33,13 @@ class Gridworld:
     # a is an invalid action if it would cause the agent to go out of bounds.
     # `a` is a member of Actions, and `s` is the state, which is a tuple (x,y).
     def is_valid_action(self, a, s):
-        if (s[1] == 0 and a == Actions.DOWN):
+        if (s[1] <= 0 and a == Actions.DOWN):
             return False
-        elif (s[1] == self.SIZE_Y - 1 and a == Actions.UP):
+        elif (s[1] >= self.SIZE_Y - self.control_freq and a == Actions.UP):
             return False
-        elif (s[0] == 0 and a == Actions.LEFT):
+        elif (s[0] <= 0 and a == Actions.LEFT):
             return False
-        elif (s[0] == self.SIZE_X - 1 and a == Actions.RIGHT):
+        elif (s[0] >= self.SIZE_X - self.control_freq and a == Actions.RIGHT):
             return False
         else:
             return True
@@ -54,18 +54,23 @@ class Gridworld:
 
     # Return the new state s' from taking action `a` in state `s`
     # Do not call when `s` is a terminal state.
-    def get_next_state(self, a, s):
+    def get_next_state(self, a, s, step):
         if (not self.is_valid_action(a, s)):
             return s
-        
+        final_state = s
         if (a == Actions.LEFT):
-            return (s[0]-1, s[1])
+            final_state = (s[0]-step, s[1])
         elif (a == Actions.RIGHT):
-            return (s[0]+1, s[1])
+            final_state = (s[0]+step, s[1])
         elif (a == Actions.UP):
-            return (s[0], s[1]+1)
+            final_state = (s[0], s[1]+step)
         elif (a == Actions.DOWN):
-            return (s[0], s[1]-1)
+            final_state = (s[0], s[1]-step)
+        final_state = (
+            np.clip(final_state[0], 0, self.SIZE_X),
+            np.clip(final_state[1], 0, self.SIZE_Y)
+        )
+        return final_state
 
     # Returns the reward from taking any action ending in state `s`
     def get_state_reward(self, s):
@@ -81,8 +86,12 @@ class Gridworld:
         if (not self.is_valid_action(a, s)):
             return 0
 
-        next_state = self.get_next_state(a, s)
-        return self.get_state_reward(next_state)
+        final_state = self.get_next_state(a, s, self.control_freq)
+        reward_sum = 0
+        while (s != final_state):
+            s = self.get_next_state(a, s, 1)
+            reward_sum += self.get_state_reward(s)
+        return reward_sum
 
     # Generate a valid random action
     def generate_random_action(self, state):

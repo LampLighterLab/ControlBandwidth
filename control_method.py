@@ -38,7 +38,7 @@ class QLearning:
                 next_action = self.env.generate_random_action(self.state)
             else:
                 next_action = max_action
-            next_state = self.env.get_next_state(next_action, self.state)
+            next_state = self.env.get_next_state(next_action, self.state, self.env.control_freq)
             
             # Update action-value function
             max_q_val = self.get_action_value(next_action, next_state)
@@ -68,7 +68,7 @@ class QLearning:
                 if (self.get_action_value(action, curr_state) > max_q_val):
                     max_q_val = self.get_action_value(action, curr_state)
                     max_action = action
-            curr_state = self.env.get_next_state(max_action, curr_state)
+            curr_state = self.env.get_next_state(max_action, curr_state, 1)
         if curr_state in path:
             print("Greedy path is cyclic! No path can be found with current Q(s,a)")
         if curr_state in self.env.terminal_states:
@@ -81,7 +81,7 @@ class QLearning:
 class Reinforce:
     # REINFORCE algorithm using the softmax policy
     
-    def __init__(self, env, initial_state, discount_factor, step_size, temperature, max_timestep=10000):
+    def __init__(self, env, initial_state, discount_factor, step_size, temperature, max_timestep=1000):
         self.env = env
         self.initial_state = initial_state
         self.state = initial_state
@@ -91,7 +91,7 @@ class Reinforce:
         self.max_timestep = max_timestep
         
         def feature_vector(a, s):
-            x = s[0] - 7
+            x = s[0] - 8
             y = s[1] - 8
             i = a.value
             num_state_features = 6
@@ -129,29 +129,20 @@ class Reinforce:
     def run_episode(self):
         self.state = self.initial_state
         stepnum = 0
-        straight_steps_remaining = 0
         states = list()
         actions = list()
         rewards = list()
         while (stepnum < self.max_timestep and self.state not in self.env.terminal_states):
             # Generate next action, state according to parameterized policy
-            if (straight_steps_remaining == 0):
-                straight_steps_remaining = self.env.control_freq
-                action_probs_tuple = self.get_action_probs(self.state)
-                valid_actions = action_probs_tuple[0]
-                action_probs = action_probs_tuple[1]
-                next_action = self.random_generator.choice(valid_actions, p=action_probs)
-                states.append(self.state)
-                actions.append(next_action)
-                rewards.append(self.env.get_action_reward(next_action, self.state))
-                #print(self.state)
-                #print(valid_actions)
-                #print(action_probs)
-                #print(next_action)
-                #print()
-            self.state = self.env.get_next_state(next_action, self.state)
+            action_probs_tuple = self.get_action_probs(self.state)
+            valid_actions = action_probs_tuple[0]
+            action_probs = action_probs_tuple[1]
+            next_action = self.random_generator.choice(valid_actions, p=action_probs)
+            states.append(self.state)
+            actions.append(next_action)
+            rewards.append(self.env.get_action_reward(next_action, self.state))
+            self.state = self.env.get_next_state(next_action, self.state, self.env.control_freq)
             stepnum += 1
-            straight_steps_remaining -= 1
         
         # Handle terminal state
         if (self.state in self.env.terminal_states):
@@ -180,7 +171,7 @@ class Reinforce:
                 action_probs = action_probs_tuple[1]
                 next_action = self.random_generator.choice(valid_actions, p=action_probs)
                 states.append(state)
-            state = self.env.get_next_state(next_action, state)
+            state = self.env.get_next_state(next_action, state, 1)
             stepnum += 1
             straight_steps_remaining -= 1
         if (state in self.env.terminal_states):

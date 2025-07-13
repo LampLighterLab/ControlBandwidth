@@ -5,7 +5,7 @@ class MonteCarlo:
 
     # `environment` is a Gridworld object
     # `policy` is a function mapping from tuples (x,y) to Actions
-    def __init__(self, initial_policy, initial_state, environment, discount_factor, max_timestep=10000):
+    def __init__(self, initial_policy, initial_state, environment, discount_factor, max_timestep=1000):
         self.policy = initial_policy
         self.initial_state = initial_state
         self.env = environment
@@ -28,19 +28,15 @@ class MonteCarlo:
     # Generate one episode and update agent's value function
     def run_episode(self):
         self.reset_state()
-        straight_steps_remaining = 0 # Handle control frequency
         states = list()         # states[n]: state at timestep n
         rewards = list()        # rewards[n]: reward at timestep n+1
         stepnum = 0
         while (stepnum < self.max_timestep and self.state not in self.env.terminal_states):
-            if (straight_steps_remaining == 0):
-                straight_steps_remaining = self.env.control_freq
-                next_action = self.policy(self.state)
-                states.append(self.state)
-                rewards.append(self.env.get_action_reward(next_action, self.state))
-            self.state = self.env.get_next_state(next_action, self.state)
+            next_action = self.policy(self.state)
+            states.append(self.state)
+            rewards.append(self.env.get_action_reward(next_action, self.state))
+            self.state = self.env.get_next_state(next_action, self.state, self.env.control_freq)
             stepnum += 1
-            straight_steps_remaining -= 1
 
         # Calculate reward of terminal state over remaining timesteps
         if (self.state in self.env.terminal_states):
@@ -72,7 +68,7 @@ class MonteCarlo:
 class TDLambda:
     # Online TDLambda
 
-    def __init__(self, initial_policy, initial_state, environment, discount_factor, learning_rate, trace_decay, max_timestep=100000):
+    def __init__(self, initial_policy, initial_state, environment, discount_factor, learning_rate, trace_decay, max_timestep=1000):
         self.policy = initial_policy
         self.initial_state = initial_state
         self.env = environment
@@ -98,13 +94,10 @@ class TDLambda:
         self.reset_state()
         eligibility_traces = dict()     # Map from states (tuples) to floats. Eligibility trace of all states not in `eligibility_traces` is 0
         stepnum = 0
-        straight_steps_remaining = 0
         
         while (stepnum < self.max_timestep and self.state not in self.env.terminal_states):
-            if (straight_steps_remaining == 0):
-                straight_steps_remaining = self.env.control_freq
-                next_action = self.policy(self.state)
-            next_state = self.env.get_next_state(next_action, self.state)
+            next_action = self.policy(self.state)
+            next_state = self.env.get_next_state(next_action, self.state, self.env.control_freq)
             reward = self.env.get_action_reward(next_action, self.state)
             td_error = reward + self.discount_factor * self.get_state_value(next_state) - self.get_state_value(self.state)
             
@@ -122,12 +115,11 @@ class TDLambda:
 
             self.state = next_state
             stepnum += 1
-            straight_steps_remaining -= 1
 
         # Terminal state reached. This code basically just does the same thing as the previous loop.
         # ? There may be a closed form expression for the value function of each state once a terminal state is reached, given a number of remaining steps. However, for now this explicitly simulates each state
         for i in range(self.max_timestep - stepnum):
-            reward = self.env.state_reward(self.state)
+            reward = self.env.get_state_reward(self.state)
             td_error = reward + self.discount_factor * self.get_state_value(self.state) - self.get_state_value(self.state)
             
             # Update eligibility traces

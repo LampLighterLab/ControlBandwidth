@@ -45,12 +45,12 @@ def test_monte_carlo():
     
 def test_tdlambda():
     rewards = {
-            (5,5):1
+            (6,6):1
             }
     terminal_states = [
-        (5,5)
+        (6,6)
         ]
-    env = Gridworld(rewards, terminal_states, size=(10,8), control_freq=5)
+    env = Gridworld(rewards, terminal_states, size=(10,8), control_freq=2)
     initial_state = (0,0)
 
     def up_policy(s):
@@ -270,36 +270,17 @@ def plot_q_hyperparams():
 
 def test_reinforce():
     rewards = {
-            (7,8):1
+            (8,8):1
             }
     terminal_states = [
-        (7,8)
+        (8,8)
         ]
-    env = Gridworld(rewards, terminal_states, size=(10,10), control_freq=1)
+    env = Gridworld(rewards, terminal_states, size=(10,10), control_freq=2)
     
-    # Feature vector: (x^2 * 1(Actions.UP), x^2 * 1(Actions.RIGHT), ...
-    #                  y^2 * 1(Actions.UP), ...
-    #                  1 * 1(Actions.UP), ...)
-    
-    # ! this is taking most of the computation time
-    def feature_vector(a, s):
-        x = s[0]-7
-        y = s[1]-8
-        state_features = [x**2, y**2, 1, x, y, x*y]
-        actions = [Actions.UP, Actions.RIGHT, Actions.DOWN, Actions.LEFT]
-        action_indicators = list()
-        for action in actions:
-            if a is action:
-                action_indicators.append(1)
-            else:
-                action_indicators.append(0)
-        feature_vec = list()
-        for i in range(4 * len(state_features)):
-            feature_vec.append(state_features[i % len(state_features)] * action_indicators[i // len(state_features)])
-        return feature_vec
-    
+    # control_freq = 1: temperature must be >= 20
+    # control_freq = 2: temperature must be >= 100 for good results! (not get stuck between 2 states)
     reinforce_solver = Reinforce(env, initial_state=(0,0),
-                                 discount_factor=0.9, step_size=0.2, temperature=10)
+                                 discount_factor=0.9, step_size=0.2, temperature=100)
     start = time.time_ns()
     for i in range(n := 100):
         reinforce_solver.run_episode()
@@ -364,8 +345,8 @@ def test_pendulum():
 
 #test_monte_carlo()
 #test_tdlambda()
-test_q_learning()
+#test_q_learning()
 #generate_q_hyperparams()
 #plot_q_hyperparams()
-#test_reinforce()
+test_reinforce()
 #test_pendulum()
