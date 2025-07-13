@@ -24,23 +24,20 @@ class QLearning:
     def run_episode(self):
         self.state = self.initial_state
         stepnum = 0
-        straight_steps_remaining = 0
         next_action = Actions.UP            # declared here to keep `next_action` in scope. Initial action is arbitrary
         while (stepnum < self.max_timestep and self.state not in self.env.terminal_states):
             # Generate next action, state according to epsilon-greedy policy
-            if (straight_steps_remaining == 0):
-                straight_steps_left = self.env.control_freq
-                max_q_val = self.get_action_value(next_action, self.state)
-                max_action = next_action
-                for action in self.env.get_valid_actions(self.state):
-                    if (self.get_action_value(action, self.state) > max_q_val):
-                        max_q_val = self.get_action_value(action, self.state)
-                        max_action = action
-                r = random.random()
-                if (r < self.epsilon):
-                    next_action = self.env.generate_random_action(self.state)
-                else:
-                    next_action = max_action
+            max_q_val = self.get_action_value(next_action, self.state)
+            max_action = next_action
+            for action in self.env.get_valid_actions(self.state):
+                if (self.get_action_value(action, self.state) > max_q_val):
+                    max_q_val = self.get_action_value(action, self.state)
+                    max_action = action
+            r = random.random()
+            if (r < self.epsilon):
+                next_action = self.env.generate_random_action(self.state)
+            else:
+                next_action = max_action
             next_state = self.env.get_next_state(next_action, self.state)
             
             # Update action-value function
@@ -57,7 +54,6 @@ class QLearning:
             
             self.state = next_state
             stepnum += 1
-            straight_steps_left -= 1
         
         # Handle terminal state
     
