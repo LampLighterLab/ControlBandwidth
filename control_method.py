@@ -160,20 +160,16 @@ class Reinforce:
     def get_path(self):
         states = list()
         stepnum = 0
-        straight_steps_remaining = 0
         state = self.initial_state
         while (stepnum < self.max_timestep and state not in self.env.terminal_states):
             # Generate next action, state according to parameterized policy
-            if (straight_steps_remaining == 0):
-                straight_steps_remaining = self.env.control_freq
-                action_probs_tuple = self.get_action_probs(state)
-                valid_actions = action_probs_tuple[0]
-                action_probs = action_probs_tuple[1]
-                next_action = self.random_generator.choice(valid_actions, p=action_probs)
-                states.append(state)
+            action_probs_tuple = self.get_action_probs(state)
+            valid_actions = action_probs_tuple[0]
+            action_probs = action_probs_tuple[1]
+            next_action = self.random_generator.choice(valid_actions, p=action_probs)
+            states.append(state)
             state = self.env.get_next_state(next_action, state, 1)
             stepnum += 1
-            straight_steps_remaining -= 1
         if (state in self.env.terminal_states):
             states.append(state)
         print(states)
