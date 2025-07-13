@@ -3,7 +3,6 @@ import math
 class MonteCarlo:
     # Every-visit Monte Carlo
 
-    # `environment` is a Gridworld object
     # `policy` is a function mapping from tuples (x,y) to Actions
     def __init__(self, initial_policy, initial_state, environment, discount_factor, max_timestep=1000):
         self.policy = initial_policy
@@ -89,7 +88,6 @@ class TDLambda:
             return 0
     
     # Generate one episode and update agent's value function
-    # Value func updates are made at the simulation freq, not control freq
     def run_episode(self):
         self.reset_state()
         eligibility_traces = dict()     # Map from states (tuples) to floats. Eligibility trace of all states not in `eligibility_traces` is 0

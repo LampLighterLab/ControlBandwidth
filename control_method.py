@@ -4,17 +4,17 @@ import math
 import random
 
 class QLearning:
-    # Implements the Q Learning policy improvement algorithm
+    # Implements the Q Learning algorithm
     # Q(a,s) = 0 initially for all a,s  
-    def __init__(self, env, initial_state, epsilon, discount_factor, step_size, max_timestep=10000):
+    def __init__(self, env, initial_state, epsilon, discount_factor, step_size, max_timestep=1000):
         self.env = env
         self.initial_state = initial_state
-        self.epsilon = epsilon               # Random exploration factor in epsilon-greedy behavior policy
+        self.epsilon = epsilon                  # Random exploration factor in epsilon-greedy behavior policy
         self.discount_factor = discount_factor
         self.step_size = step_size
         self.max_timestep = max_timestep
         self.state = initial_state
-        self.action_value_dict = dict()      # map: (action, (x,y)) -> float
+        self.action_value_dict = dict()         # map: (action, (x,y)) -> float
     
     def get_action_value(self, action, state):
         if ((action, state) in self.action_value_dict):
@@ -55,7 +55,7 @@ class QLearning:
             self.state = next_state
             stepnum += 1
         
-        # Handle terminal state
+        # ! terminal state is not handled
     
     def get_optimal_path(self):
         path = list()
@@ -90,6 +90,7 @@ class Reinforce:
         self.temperature = temperature
         self.max_timestep = max_timestep
         
+        # Feature vector contains one entry for each action-(state observation) pair
         def feature_vector(a, s):
             x = s[0] - 8
             y = s[1] - 8
@@ -115,7 +116,7 @@ class Reinforce:
             action_probs[i] = action_probs[i] / sum_weights
         return (valid_actions, action_probs)
     
-    # Calculate value of score function to be used in updating weights. 
+    # Calculate value of score function to be used in updating weights
     def score_function(self, action, state):
         action_probs_tuple = self.get_action_probs(state)
         valid_actions = action_probs_tuple[0]
@@ -157,6 +158,7 @@ class Reinforce:
             self.weights = np.add(self.weights,
                                   self.step_size*return_i*self.score_function(actions[i], states[i]))
     
+    # Generate a sample path without updating weights
     def get_path(self):
         states = list()
         stepnum = 0

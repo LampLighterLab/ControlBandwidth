@@ -8,21 +8,11 @@ class Actions(Enum):
     DOWN = 2
     LEFT = 3
 
-# Should not occur if everything goes right
-class IllegalActionException(Exception):
-    def __init__(self):
-        super().__init__("Attempted action is invalid for this state")
-
 class Gridworld:
-    # Immutable class
 
-    # Constructor will take in a dict `rewards` mapping from a tuple (x,y) to a float,
-    # representing coordinates of cells whose rewards are nonzero. `terminalStates` is a list of
-    # tuples (x,y) which represent coordinates of terminal states.
-    # x will represent the horizontal position (0 on the left), and y will represent
-    # the vertical position (0 on the bottom)
+    # Grid coordinates represented by tuples (x,y), where (0,0) is at the bottom left corner
     def __init__(self, rewards, terminal_states, size=(10,10), control_freq=1):
-        self.rewards = rewards
+        self.rewards = rewards                      # dict: tuple (x,y) -> scalar, representing nonzero rewards
         self.terminal_states = terminal_states
         self.SIZE_X = size[0]
         self.SIZE_Y = size[1]
@@ -53,7 +43,7 @@ class Gridworld:
         return a
 
     # Return the new state s' from taking action `a` in state `s`
-    # Do not call when `s` is a terminal state.
+    # Do not call when `s` is a terminal state, it should be already known to not update the state in that case
     def get_next_state(self, a, s, step):
         if (not self.is_valid_action(a, s)):
             return s
@@ -72,7 +62,7 @@ class Gridworld:
         )
         return final_state
 
-    # Returns the reward from taking any action ending in state `s`
+    # Returns the reward from ending in state `s`
     def get_state_reward(self, s):
         if s in self.rewards:
             return self.rewards.get(s)

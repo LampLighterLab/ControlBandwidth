@@ -13,21 +13,7 @@ class InvertedPendulum:
         self.sim_timestep = sim_timestep
         self.control_timestep = control_timestep
 
-    # z = (angular velocity, angular position)
-    # T_app is applied torque on the pendulum
-    def pendulum_dynamics(self, t, z, T_app):
-        vel, pos = z
-        m = self.params["mass"]
-        l = self.params["length"]
-        g = self.params["gravity"]
-        I = m*l*l
-        return [(g*np.sin(pos))/l + T_app/I, vel]
-    
-    # For testing
-    def get_sol(self, t0, tf, z, T_app):
-        sol = scipy.integrate.solve_ivp(self.pendulum_dynamics, [t0, tf], z, args=(T_app,), min_step=self.sim_timestep, max_step=self.sim_timestep)
-        return sol
-    
+    # `T_app` is the applied torque on the pendulum
     def get_next_state(self, T_app, state):
         t = 0
         m = self.params["mass"]
