@@ -90,7 +90,7 @@ class Reinforce:
         self.temperature = temperature
         self.max_timestep = max_timestep
         
-        self.weights = [0] * len(Gridworld.feature_vector(Actions.UP, initial_state))
+        self.weights = np.zeros(len(Gridworld.feature_vector(Actions.UP, initial_state)))
         
         self.random_generator = np.random.default_rng(123456)
 

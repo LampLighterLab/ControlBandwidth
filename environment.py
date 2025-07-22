@@ -107,4 +107,4 @@ class Gridworld:
         y = s[1] - 8
         i = a.value
         num_state_features = 6
-        return [0]*num_state_features*(i) + [x**2, y**2, 1, x, y, x*y] + [0]*num_state_features*(3-i)
+        return np.array([0]*num_state_features*(i) + [x**2, y**2, 1, x, y, x*y] + [0]*num_state_features*(3-i))
