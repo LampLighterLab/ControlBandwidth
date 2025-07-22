@@ -1,4 +1,4 @@
-from environment import Actions
+from environment import Actions, Gridworld
 import numpy as np
 import math
 import random
@@ -90,15 +90,7 @@ class Reinforce:
         self.temperature = temperature
         self.max_timestep = max_timestep
         
-        # Feature vector contains one entry for each action-(state observation) pair
-        def feature_vector(a, s):
-            x = s[0] - 8
-            y = s[1] - 8
-            i = a.value
-            num_state_features = 6
-            return [0]*num_state_features*(i) + [x**2, y**2, 1, x, y, x*y] + [0]*num_state_features*(3-i)
-        self.feature_vector = feature_vector
-        self.weights = [0] * len(self.feature_vector(Actions.UP, initial_state))
+        self.weights = [0] * len(Gridworld.feature_vector(Actions.UP, initial_state))
         
         self.random_generator = np.random.default_rng(123456)
 
@@ -108,7 +100,7 @@ class Reinforce:
         action_probs = list()
         sum_weights = 0
         for action in valid_actions:
-            feature_scalar = np.dot(self.weights, self.feature_vector(action, state))
+            feature_scalar = np.dot(self.weights, Gridworld.feature_vector(action, state))
             weight = math.exp(feature_scalar / self.temperature)
             action_probs.append(weight)
             sum_weights += weight
@@ -121,10 +113,10 @@ class Reinforce:
         action_probs_tuple = self.get_action_probs(state)
         valid_actions = action_probs_tuple[0]
         action_probs = action_probs_tuple[1]
-        gradient_log_policy = self.feature_vector(action, state)
+        gradient_log_policy = Gridworld.feature_vector(action, state)
         for i in range(len(valid_actions)):
             gradient_log_policy = np.subtract(gradient_log_policy,
-                                              np.multiply(action_probs[i], self.feature_vector(valid_actions[i], state)))
+                                              np.multiply(action_probs[i], Gridworld.feature_vector(valid_actions[i], state)))
         return gradient_log_policy
     
     def run_episode(self):

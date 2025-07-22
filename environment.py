@@ -95,3 +95,16 @@ class Gridworld:
         if (not state[1] == self.SIZE_Y - 1):
             valid_actions.append(Actions.UP)
         return self.random_generator.choice(valid_actions)
+    
+    # Feature vector contains one entry for each action-(state observation) pair
+    # [(x^2 if a == UP, 0 otherwise), (y^2 if a == UP, 0 otherwise), ... ,
+    #  (x^2 if a == RIGHT, 0 otherwise), ... ,
+    #  (x^2 if a == DOWN, 0 otherwise), ... ,
+    #  (x^2 if a == LEFT, 0 otherwise), ... ]
+    @classmethod
+    def feature_vector(cls, a, s):
+        x = s[0] - 8
+        y = s[1] - 8
+        i = a.value
+        num_state_features = 6
+        return [0]*num_state_features*(i) + [x**2, y**2, 1, x, y, x*y] + [0]*num_state_features*(3-i)

@@ -92,3 +92,5 @@ def run_reinforce():
     
     plt.subplots_adjust(hspace=0.3)
     plt.show()
+
+run_reinforce()
