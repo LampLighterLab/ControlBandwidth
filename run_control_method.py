@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 from environment import Actions, Gridworld
-from control_method import QLearning, Reinforce
+from control_method import QLearning, ReinforceSoftmax
 
 def run_q_learning():
     rewards = {
@@ -46,7 +46,7 @@ def run_q_learning():
     q_learning_object.get_optimal_path()
     plt.show()
 
-def run_reinforce():
+def run_reinforce_softmax():
     rewards = {
             (8,8):1
             }
@@ -58,7 +58,7 @@ def run_reinforce():
     # control_freq = 1: temperature must be >= 20
     # control_freq = 2: temperature must be >= 100 for good results (not get stuck between 2 states)
     # I don't know why this occurs
-    reinforce_solver = Reinforce(env, initial_state=(0,0),
+    reinforce_solver = ReinforceSoftmax(env, initial_state=(0,0),
                                  discount_factor=0.9, step_size=0.2, temperature=100)
     start = time.time_ns()
     for i in range(n := 100):
@@ -93,4 +93,4 @@ def run_reinforce():
     plt.subplots_adjust(hspace=0.3)
     plt.show()
 
-run_reinforce()
+run_reinforce_softmax()

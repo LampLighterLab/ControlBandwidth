@@ -32,3 +32,10 @@ class InvertedPendulum:
     def get_action_reward(self, a, s):
         next_state = self.get_next_state(a, s)
         return self.value_func(next_state)
+    
+    def feature_vector(self, s):
+        pos = s[0]
+        vel = s[1]
+        KE = vel**2
+        PE = self.params["mass"] * self.params["gravity"] * self.params["length"] * (np.cos(pos) - 1)
+        return np.array([np.cos(pos), np.sin(pos), vel, KE, PE, 1])

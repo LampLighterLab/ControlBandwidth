@@ -78,7 +78,7 @@ class QLearning:
             print(f"Path length is {len(path)}")
 
 
-class Reinforce:
+class ReinforceSoftmax:
     # REINFORCE algorithm using the softmax policy
     
     def __init__(self, env, initial_state, discount_factor, step_size, temperature, max_timestep=1000):
