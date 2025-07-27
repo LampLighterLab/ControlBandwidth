@@ -67,7 +67,7 @@ class MonteCarloDiscrete:
                 self.values[states[i]] += (return_i - self.values[states[i]]) / (self.visits[states[i]])
 
 class MonteCarloContinuous:
-    # ! Every-visit Monte Carlo with linear value func approx and continuous actions
+    # Every-visit Monte Carlo with linear value func approx and continuous actions
 
     def __init__(self, initial_state, environment, discount_factor, max_timestep=20):
         self.initial_state = initial_state
@@ -85,7 +85,7 @@ class MonteCarloContinuous:
     
     #Policy
     def get_next_action(self, s):
-        return 2 * self.random_generator.random() - 1
+        return 0.1 * self.random_generator.random() - 0.05
     
     def state_value_approx(self, s):
         return np.dot(self.weights, self.env.feature_vector(s))
