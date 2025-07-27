@@ -1,7 +1,9 @@
 import math
+import numpy as np
+from random import Random
 
-class MonteCarlo:
-    # Every-visit Monte Carlo
+class MonteCarloDiscrete:
+    # Every-visit Monte Carlo with dictionary value function and discrete actions
 
     # `policy` is a function mapping from tuples (x,y) to Actions
     def __init__(self, initial_policy, initial_state, environment, discount_factor, max_timestep=1000):
@@ -64,8 +66,54 @@ class MonteCarlo:
                 self.visits[states[i]] += 1
                 self.values[states[i]] += (return_i - self.values[states[i]]) / (self.visits[states[i]])
 
-class TDLambda:
-    # Online TDLambda
+class MonteCarloContinuous:
+    # ! Every-visit Monte Carlo with linear value func approx and continuous actions
+
+    def __init__(self, initial_state, environment, discount_factor, max_timestep=20):
+        self.initial_state = initial_state
+        self.env = environment
+        self.discount_factor = discount_factor
+        self.max_timestep = max_timestep
+
+        self.weights = np.zeros(self.env.feature_vector(initial_state).shape[0])
+        self.state = initial_state
+        self.random_generator = np.random.default_rng(54321)
+        self.step_size = 0.00005
+        
+    def reset_state(self):
+        self.state = self.initial_state
+    
+    #Policy
+    def get_next_action(self, s):
+        return 2 * self.random_generator.random() - 1
+    
+    def state_value_approx(self, s):
+        return np.dot(self.weights, self.env.feature_vector(s))
+    
+    # Generate one episode and update agent's value function
+    def run_episode(self):
+        self.reset_state()
+        states = list()         # states[n]: state at timestep n
+        rewards = list()        # rewards[n]: reward at timestep n+1
+        t = 0
+        while (t < self.max_timestep):
+            next_action = self.get_next_action(self.state)
+            states.append(self.state)
+            rewards.append(self.env.get_action_reward(next_action, self.state))
+            self.state = self.env.get_next_state(next_action, self.state)
+            t += self.env.sim_timestep
+
+        # Update value function
+        i = len(states)
+        return_i = 0
+        while (i > 0):
+            i -= 1
+            return_i = rewards[i] + self.discount_factor*return_i
+            error = return_i - self.state_value_approx(states[i])
+            self.weights = self.weights + self.step_size * error * self.env.feature_vector(states[i])
+
+class TDLambdaDiscrete:
+    # Online TDLambda with dictionary value function and discrete actions
 
     def __init__(self, initial_policy, initial_state, environment, discount_factor, learning_rate, trace_decay, max_timestep=1000):
         self.policy = initial_policy

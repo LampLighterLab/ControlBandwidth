@@ -8,16 +8,18 @@ from control_method import QLearning, ReinforceSoftmax
 
 def run_q_learning():
     rewards = {
-            (8,8):1
+            (8,8):1,
             }
     terminal_states = [
         (8,8)
         ]
     env = Gridworld(rewards, terminal_states, size=(10,10), control_freq=2)
-    q_learning_object = QLearning(env, initial_state=(0,0), epsilon=0.3, discount_factor=0.9, step_size=0.5)
+    q_learning_object = QLearning(env, initial_state=(0,0), epsilon=0.3, discount_factor=0.9)
     start = time.time_ns()
-    for i in range(n := 1000):
+    for i in range(n := 100):
         q_learning_object.run_episode()
+        print(i)
+        print(q_learning_object.weights)
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
@@ -29,18 +31,19 @@ def run_q_learning():
     fig, axs = plt.subplots(2, 2)
     fig.suptitle("Action-Value Function")
 
+    im = None
     for ax, action, name in zip(axs.flat, actions, action_names):
         arr = np.zeros((q_learning_object.env.SIZE_Y, q_learning_object.env.SIZE_X))
         for i in range(q_learning_object.env.SIZE_Y):
             for j in range(q_learning_object.env.SIZE_X):
-                arr[i, j] = q_learning_object.get_action_value(action, (j, i))
+                arr[i, j] = q_learning_object.action_value_approx(action, (j, i))
 
-        im = ax.imshow(arr, origin="lower")
-        fig.colorbar(im, ax=ax)
+        im = ax.imshow(arr, origin="lower", vmin=0, vmax=4)
         ax.set_xlabel("x-coordinate")
         ax.set_ylabel("y-coordinate")
         ax.set_title(f"Action: {name}")
 
+    fig.colorbar(im, ax=axs[0, 0])
     plt.tight_layout()
     
     q_learning_object.get_optimal_path()
@@ -93,4 +96,4 @@ def run_reinforce_softmax():
     plt.subplots_adjust(hspace=0.3)
     plt.show()
 
-run_reinforce_softmax()
+run_q_learning()

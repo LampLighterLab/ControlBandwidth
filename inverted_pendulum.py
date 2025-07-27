@@ -1,15 +1,13 @@
-import scipy.integrate
 import numpy as np
 
 class InvertedPendulum:
     # Point mass attached to a massless rigid rod
     
     # params is a dict containing keys "mass", "length", "gravity"
-    def __init__(self, params, initial_state, value_func, sim_timestep=0.01, control_timestep=0.1):
+    def __init__(self, params, initial_state, sim_timestep=0.01, control_timestep=0.1):
         self.params = params
         self.angular_pos = initial_state[0]                # 0 is pointing straight up, positive clockwise
         self.angular_vel = initial_state[1]                # Positive velocity is clockwise
-        self.value_func = value_func                       # function: [pos, vel] -> scalar
         self.sim_timestep = sim_timestep
         self.control_timestep = control_timestep
 
@@ -25,13 +23,15 @@ class InvertedPendulum:
             t += self.sim_timestep
         return state
     
+    # e^(cos(pos)) - 1/e
+    # Chosen because reward has maxima at n*2pi, minima = 0 at n*2pi - pi
     def get_state_reward(self, s):
-        return self.value_func(s)
+        return (np.exp(np.cos(s[0])) - 1/np.e)
     
     # The action is the applied torque
     def get_action_reward(self, a, s):
         next_state = self.get_next_state(a, s)
-        return self.value_func(next_state)
+        return self.get_state_reward(next_state)
     
     def feature_vector(self, s):
         pos = s[0]

@@ -1,61 +1,77 @@
-from environment import Actions, Gridworld
+from environment import Actions
 import numpy as np
+from numpy.linalg import LinAlgError
 import math
-import random
+from environment import Gridworld
 
 class QLearning:
-    # Implements the Q Learning algorithm
-    # Q(a,s) = 0 initially for all a,s  
-    def __init__(self, env, initial_state, epsilon, discount_factor, step_size, max_timestep=1000):
+    # Implements the Q Learning policy improvement algorithm with state-value function approximation
+
+    def __init__(self, env, initial_state, epsilon, discount_factor, max_timestep=1000):
         self.env = env
         self.initial_state = initial_state
-        self.epsilon = epsilon                  # Random exploration factor in epsilon-greedy behavior policy
+        self.epsilon = epsilon               # Random exploration factor in epsilon-greedy behavior policy
         self.discount_factor = discount_factor
-        self.step_size = step_size
         self.max_timestep = max_timestep
         self.state = initial_state
-        self.action_value_dict = dict()         # map: (action, (x,y)) -> float
+        self.action_value_dict = dict()      # map: (action, (x,y)) -> float
+        self.random_generator = np.random.default_rng(1234526)
+        
+        self.weights = np.zeros(len(Gridworld.feature_vector(Actions.UP, initial_state)))
     
-    def get_action_value(self, action, state):
-        if ((action, state) in self.action_value_dict):
-            return self.action_value_dict[(action, state)]
-        return 0
+    def action_value_approx(self, a, s):
+        return np.dot(self.weights, Gridworld.feature_vector(a, s))
+    
+    # Find least squares solution for weights using TD(0) error
+    # states, rewards are lists of their values in an episode
+    def update_weights(self, states, rewards, actions):
+        outer_prod = np.zeros((len(self.weights), len(self.weights)))
+        r_vec = np.zeros(len(self.weights))
+        for i in range(len(states)-1):
+            a = np.array(Gridworld.feature_vector(actions[i], states[i]))
+            b = np.array(Gridworld.feature_vector(actions[i], states[i]) - np.multiply(self.discount_factor, Gridworld.feature_vector(actions[i+1], states[i+1])))
+            a = np.reshape(a, (a.shape[0], 1))
+            b = np.reshape(b, (1, b.shape[0]))
+            outer_prod = np.add(outer_prod, a * b)
+        for i in range(len(states)):
+            r_vec = np.add(r_vec, np.multiply(rewards[i], Gridworld.feature_vector(actions[i], states[i])))
+        # "cheating" to get around non-invertibility
+        try:
+            outer_prod = np.linalg.inv(outer_prod)
+        except LinAlgError:
+            outer_prod = np.add(outer_prod, np.multiply(0.0001, np.identity(len(self.weights))))
+            outer_prod = np.linalg.inv(outer_prod)
+        self.weights = np.matmul(outer_prod, r_vec)
     
     def run_episode(self):
         self.state = self.initial_state
         stepnum = 0
         next_action = Actions.UP            # declared here to keep `next_action` in scope. Initial action is arbitrary
+        states = list()
+        rewards = list()
+        actions = list()
         while (stepnum < self.max_timestep and self.state not in self.env.terminal_states):
             # Generate next action, state according to epsilon-greedy policy
-            max_q_val = self.get_action_value(next_action, self.state)
+            max_q_val = self.action_value_approx(next_action, self.state)
             max_action = next_action
             for action in self.env.get_valid_actions(self.state):
-                if (self.get_action_value(action, self.state) > max_q_val):
-                    max_q_val = self.get_action_value(action, self.state)
+                if (self.action_value_approx(action, self.state) > max_q_val):
+                    max_q_val = self.action_value_approx(action, self.state)
                     max_action = action
-            r = random.random()
+            r = self.random_generator.random()
             if (r < self.epsilon):
                 next_action = self.env.generate_random_action(self.state)
             else:
                 next_action = max_action
+            states.append(self.state)
+            rewards.append(self.env.get_action_reward(next_action, self.state))
+            actions.append(next_action)
             next_state = self.env.get_next_state(next_action, self.state, self.env.control_freq)
-            
-            # Update action-value function
-            max_q_val = self.get_action_value(next_action, next_state)
-            max_action = next_action
-            for action in self.env.get_valid_actions(next_state):
-                if (self.get_action_value(action, next_state) > max_q_val):
-                    max_q_val = self.get_action_value(action, next_state)
-                    max_action = action
-            if ((next_action, self.state) in self.action_value_dict):
-                self.action_value_dict[(next_action, self.state)] += self.step_size * (self.env.get_action_reward(next_action, self.state) + self.discount_factor*max_q_val - self.action_value_dict[(next_action, self.state)])
-            else:
-                self.action_value_dict[(next_action, self.state)] = self.step_size * (self.env.get_action_reward(next_action, self.state) + self.discount_factor*max_q_val)
             
             self.state = next_state
             stepnum += 1
-        
-        # ! terminal state is not handled
+        self.update_weights(states, rewards, actions)
+        # ! this resets weights to 0 if the agent ever is timed out
     
     def get_optimal_path(self):
         path = list()
@@ -63,10 +79,10 @@ class QLearning:
         while (curr_state not in path and curr_state not in self.env.terminal_states):
             path.append(curr_state)
             max_action = self.env.get_valid_actions(curr_state)[0]
-            max_q_val = self.get_action_value(max_action, curr_state)
+            max_q_val = self.action_value_approx(max_action, curr_state)
             for action in self.env.get_valid_actions(curr_state):
-                if (self.get_action_value(action, curr_state) > max_q_val):
-                    max_q_val = self.get_action_value(action, curr_state)
+                if (self.action_value_approx(action, curr_state) > max_q_val):
+                    max_q_val = self.action_value_approx(action, curr_state)
                     max_action = action
             curr_state = self.env.get_next_state(max_action, curr_state, 1)
         if curr_state in path:

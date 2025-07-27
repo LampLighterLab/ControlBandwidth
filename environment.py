@@ -101,7 +101,7 @@ class Gridworld:
     #  (x^2 if a == RIGHT, 0 otherwise), ... ,
     #  (x^2 if a == DOWN, 0 otherwise), ... ,
     #  (x^2 if a == LEFT, 0 otherwise), ... ]
-    @classmethod
+    @classmethod # ! make this not classmethod for consistency
     def feature_vector(cls, a, s):
         x = s[0] - 8
         y = s[1] - 8
