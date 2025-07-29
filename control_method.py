@@ -14,7 +14,6 @@ class QLearning:
         self.discount_factor = discount_factor
         self.max_timestep = max_timestep
         self.state = initial_state
-        self.action_value_dict = dict()      # map: (action, (x,y)) -> float
         self.random_generator = np.random.default_rng(1234526)
         
         self.weights = np.zeros(len(Gridworld.feature_vector(Actions.UP, initial_state)))
@@ -70,8 +69,7 @@ class QLearning:
             
             self.state = next_state
             stepnum += 1
-        self.update_weights(states, rewards, actions)
-        # ! this resets weights to 0 if the agent ever is timed out
+        self.update_weights(states, rewards, actions)       # ! this resets weights to 0 if the agent ever is timed out
     
     def get_optimal_path(self):
         path = list()
