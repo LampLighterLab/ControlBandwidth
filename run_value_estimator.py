@@ -41,23 +41,47 @@ def run_monte_carlo_discrete():
 
 def run_monte_carlo_continuous():
     params = {"mass":1, "length":1, "gravity":1}
-    initial_state = np.array([0.01, 0])
-    env = InvertedPendulum(params=params, initial_state=initial_state, sim_timestep = 0.01, control_timestep= 0.1)
-    mc = MonteCarloContinuous(initial_state, env, discount_factor=0.9, max_timestep=20)
+    initial_state = np.array([0.1, 0])
+    env = InvertedPendulum(params=params, initial_state=initial_state, sim_timestep = 0.05, control_timestep= 0.1)
+    mc = MonteCarloContinuous(initial_state, env, discount_factor=0, max_timestep=10)
     
+    #Run episodes
     start = time.time_ns()
     for i in range(n := 100):
         mc.run_episode()
-        print(f"Weights: {mc.weights}")
+        # print(f"Weights: {mc.weights}")
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
     
+    # Generate sample trajectory
+    curr_state = mc.initial_state
+    states = [curr_state]
+    rewards = list()
+    t = 0
+    while (t < mc.max_timestep):
+        next_action = mc.get_next_action(curr_state)
+        rewards.append(env.get_action_reward(next_action, curr_state))
+        curr_state = env.get_next_state(next_action, curr_state)
+        states.append(curr_state)
+        t += env.control_timestep
+    states = np.array(states)
+    states = states.T
+    states[0] = np.mod(states[0], 2 * np.pi)
+    
+    i = len(rewards)
+    return_i = 0
+    returns = list()
+    while (i > 0):
+        i -= 1
+        return_i = rewards[i] + mc.discount_factor*return_i
+        returns.insert(0, return_i)
+    
     # Plot value function
-    x_min = -1 * np.pi
-    x_max = np.pi
-    y_min = -2
-    y_max = 2
+    x_min = 0
+    x_max = 2 * np.pi
+    y_min = -3
+    y_max = 3
     X = np.linspace(x_min, x_max, 200) # State-space coordinates
     Y = np.linspace(y_min, y_max, 200)
     Z = np.zeros((200, 200))
@@ -70,11 +94,14 @@ def run_monte_carlo_continuous():
         b = 0
         a += 1
 
-    plt.imshow(Z, origin="lower", extent=[x_min, x_max, y_min, y_max], aspect="auto")
-    plt.colorbar()
+    img = plt.imshow(Z, origin="lower", extent=[x_min, x_max, y_min, y_max], aspect="auto")
+    plt.colorbar(img)
     plt.xlabel("pos")
     plt.ylabel("vel")
-    plt.title("Value function")
+    plt.suptitle("Approximated value function,\nwith sample trajectory colored by returns")
+    
+    # Plot sample trajectory
+    plt.scatter(states[0][:-1], states[1][:-1], c=returns, edgecolor="white")      # last state has no associated reward
     plt.show()
 
 def run_tdlambda_discrete():
