@@ -38,3 +38,10 @@ class InvertedPendulum:
         KE = 0.5 * self.params["mass"] * vel**2
         PE = self.params["mass"] * self.params["gravity"] * self.params["length"] * (np.cos(pos) - 1)
         return np.array([np.cos(pos), np.sin(pos), vel, KE, PE, 1])
+    
+    def action_feature_vector(self, a, s):
+        pos = s[0]
+        vel = s[1]
+        KE = 0.5 * self.params["mass"] * vel**2
+        PE = self.params["mass"] * self.params["gravity"] * self.params["length"] * (np.cos(pos) - 1)
+        return np.array([np.cos(pos), np.sin(pos), vel, KE, PE, 1, a*np.cos(pos), a*np.sin(pos), a*vel, a*KE, a*PE, a])

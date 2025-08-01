@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 from environment import Actions, Gridworld
-from control_method import QLearning, ReinforceSoftmax
+from control_method import QLearning, ReinforceSoftmax, QLearningPendulum
+from inverted_pendulum import InvertedPendulum
 
 def run_q_learning():
     rewards = {
@@ -47,6 +48,55 @@ def run_q_learning():
     plt.tight_layout()
     
     q_learning_object.get_optimal_path()
+    plt.show()
+
+def run_q_learning_pendulum():
+    params = {"mass":1, "length":1, "gravity":1}
+    initial_state = np.array([0.1, 0])
+    env = InvertedPendulum(params=params, initial_state=initial_state, sim_timestep = 0.05, control_timestep= 0.1)
+    q_solver = QLearningPendulum(env, initial_state=initial_state, epsilon=0.1, 
+                                 discount_factor=0.9, learning_rate=0.00001, max_timestep=10)
+    
+    # Run episodes and update Q approximation
+    start = time.time_ns()
+    for i in range(n := 50):
+        q_solver.run_episode()
+        print(q_solver.weights)
+    end = time.time_ns()
+    print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
+    print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
+    
+    # Generate sample episode
+    curr_state = q_solver.initial_state
+    states = [curr_state]
+    rewards = list()
+    t = 0
+    while (t < q_solver.max_timestep):
+        next_action = q_solver.get_next_action(curr_state)
+        rewards.append(env.get_action_reward(next_action, curr_state))
+        curr_state = env.get_next_state(next_action, curr_state)
+        states.append(curr_state)
+        t += env.control_timestep
+    states = np.array(states)
+    states = states.T
+    
+    # Format positions to the domain [-pi, pi]
+    def format_pos(pos):
+        pos = np.mod(pos, 2 * np.pi)
+        if (pos > np.pi):
+            return pos - (2 * np.pi)
+        return pos
+    format_pos_vectorized = np.vectorize(format_pos)
+    states[0] = format_pos_vectorized(states[0])
+    
+    # Plot sample trajectory
+    timesteps = np.linspace(0, q_solver.max_timestep, len(states[0])-1)
+
+    plt.scatter(states[0][:-1], states[1][:-1], c=timesteps, edgecolor="white")      # last state has no associated reward
+    plt.colorbar()
+    plt.xlabel("pos")
+    plt.ylabel("vel")
+    plt.suptitle("sample trajectory colored by timestep")
     plt.show()
 
 def run_reinforce_softmax():
@@ -96,4 +146,4 @@ def run_reinforce_softmax():
     plt.subplots_adjust(hspace=0.3)
     plt.show()
 
-run_q_learning()
+run_q_learning_pendulum()

@@ -3,9 +3,10 @@ import numpy as np
 from numpy.linalg import LinAlgError
 import math
 from environment import Gridworld
+from inverted_pendulum import InvertedPendulum
 
 class QLearning:
-    # Implements the Q Learning policy improvement algorithm with state-value function approximation
+    # Implements the Q Learning policy improvement algorithm with action-value function approximation
 
     def __init__(self, env, initial_state, epsilon, discount_factor, max_timestep=1000):
         self.env = env
@@ -91,6 +92,64 @@ class QLearning:
             print(path)
             print(f"Path length is {len(path)}")
 
+class QLearningPendulum:
+    # Q learning algorithm for the inverted pendulum, and approximating V(s) as a linear combination of state features
+    
+    def __init__(self, env, initial_state, epsilon, discount_factor, learning_rate, max_timestep=100):
+        self.env = env
+        self.state = initial_state
+        self.initial_state = initial_state
+        self.epsilon = epsilon
+        self.discount_factor = discount_factor
+        self.learning_rate = learning_rate
+        self.max_timestep = max_timestep
+        
+        self.weights = np.zeros(len(self.env.action_feature_vector(0, self.initial_state)))
+        self.random_generator = np.random.default_rng(123)
+    
+    def action_value_approx(self, a, s):
+        return np.dot(self.weights, self.env.action_feature_vector(a, s))
+
+    # Generate next action, state according to epsilon-greedy policy
+    def get_next_action(self, state):
+        max_torque = self.env.params["mass"] * self.env.params["gravity"] * self.env.params["length"]
+        r = self.random_generator.random()
+        if (r < self.epsilon):
+            return self.random_generator.random() * 2 * max_torque - max_torque
+        
+        sample_torques = np.linspace(-1*max_torque, max_torque, 20)
+        max_q_action = sample_torques[0]
+        max_q_val = self.action_value_approx(max_q_action, state)
+        for torque in sample_torques:
+            sample_q_val = self.action_value_approx(torque, state)
+            if (sample_q_val > max_q_val):
+                max_q_val = sample_q_val
+                max_q_action = torque
+        return max_q_action 
+
+    def update_weights(self, states, rewards, actions):
+        i = len(states)
+        return_i = 0
+        while (i > 0):
+            i -= 1
+            return_i = rewards[i] + self.discount_factor*return_i
+            mc_error = return_i - self.action_value_approx(actions[i], states[i])
+            self.weights = np.add(self.weights, self.learning_rate * mc_error * self.env.action_feature_vector(actions[i], states[i]))
+
+    def run_episode(self):
+        self.state = self.initial_state
+        t = 0
+        states = list()
+        rewards = list()
+        actions = list()
+        while (t < self.max_timestep):
+            next_action = self.get_next_action(self.state)
+            states.append(self.state)
+            rewards.append(self.env.get_action_reward(next_action, self.state))
+            actions.append(next_action)
+            self.state = self.env.get_next_state(next_action, self.state)
+            t += self.env.control_timestep
+        self.update_weights(states, rewards, actions)
 
 class ReinforceSoftmax:
     # REINFORCE algorithm using the softmax policy
@@ -104,7 +163,7 @@ class ReinforceSoftmax:
         self.temperature = temperature
         self.max_timestep = max_timestep
         
-        self.weights = np.zeros(len(Gridworld.feature_vector(Actions.UP, initial_state)))
+        self.weights = np.zeros(len(env.feature_vector(initial_state)))
         
         self.random_generator = np.random.default_rng(123456)
 
