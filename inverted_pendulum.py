@@ -23,9 +23,8 @@ class InvertedPendulum:
             t += self.sim_timestep
         return state
     
-    # e^(cos(pos)) - 5*abs(vel)
     def get_state_reward(self, s):
-        return (np.exp(np.cos(s[0])) - 5*abs(s[1]))
+        return (np.exp(np.cos(s[0])) - 2*abs(s[1]))
     
     # The action is the applied torque
     def get_action_reward(self, a, s):

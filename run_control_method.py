@@ -53,20 +53,65 @@ def run_q_learning():
 def run_q_learning_pendulum():
     params = {"mass":1, "length":1, "gravity":1}
     initial_state = np.array([0.1, 0])
-    env = InvertedPendulum(params=params, initial_state=initial_state, sim_timestep = 0.05, control_timestep= 0.1)
+    env = InvertedPendulum(params=params, initial_state=initial_state, sim_timestep = 0.01, control_timestep= 0.05)
     q_solver = QLearningPendulum(env, initial_state=initial_state, epsilon=0.1, 
-                                 discount_factor=0.9, learning_rate=0.00001, max_timestep=10)
+                                 discount_factor=0.5, learning_rate=0.00001, max_timestep=20)
+    
+    fig, axs = plt.subplots(1,3)
     
     # Run episodes and update Q approximation
     start = time.time_ns()
-    for i in range(n := 50):
+    for i in range(n := 1000):
         q_solver.run_episode()
-        print(q_solver.weights)
+        print(f"Running episode {i}")
+    print(f"Final weights:\n{q_solver.weights}")
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
+
+    # Left, middle plots: Maximum Q value for each state, optimal action for each state
     
-    # Generate sample episode
+    x_min = -1 * np.pi
+    x_max = np.pi
+    y_min = -1
+    y_max = 1
+    res = 30            # Resolution of action-state space to sample
+    max_torque = env.params["mass"] * env.params["gravity"] * env.params["length"]
+    X = np.linspace(x_min, x_max, res) # State-action-space coordinates
+    Y = np.linspace(y_min, y_max, res)
+    max_q_vals = np.zeros((res, res))
+    max_q_actions = np.zeros((res, res))
+    T = np.linspace(-1 * max_torque, max_torque, res)
+    a = 0   # Array coordinates
+    b = 0
+    for x in X:
+        for y in Y:
+            max_q_val = q_solver.action_value_approx(T[0], (a, b))
+            max_q_action = T[0]
+            for t in T:
+                q_val = q_solver.action_value_approx(t, (a, b))
+                if (q_val > max_q_val):
+                    max_q_val = q_val
+                    max_q_action = t
+            max_q_vals[b, a] = max_q_val
+            max_q_actions[b, a] = max_q_action
+            b += 1
+        b = 0
+        a += 1
+    
+    img = axs[0].imshow(max_q_vals, origin="lower", extent=[x_min, x_max, y_min, y_max])
+    axs[0].set_title("Maximum Q-value over all actions")
+    fig.colorbar(img, ax=axs[0])
+    
+    img = axs[1].imshow(max_q_actions, origin="lower", extent=[x_min, x_max, y_min, y_max])
+    axs[1].set_title("Action with the maximum Q-value")
+    fig.colorbar(img, ax=axs[1])
+    
+    # Right plot: sample episode
+    
+    # Generate sample episode using greedy policy
+    original_epsilon = q_solver.epsilon
+    q_solver.epsilon = 0
     curr_state = q_solver.initial_state
     states = [curr_state]
     rewards = list()
@@ -79,6 +124,7 @@ def run_q_learning_pendulum():
         t += env.control_timestep
     states = np.array(states)
     states = states.T
+    q_solver.epsilon = original_epsilon
     
     # Format positions to the domain [-pi, pi]
     def format_pos(pos):
@@ -91,12 +137,17 @@ def run_q_learning_pendulum():
     
     # Plot sample trajectory
     timesteps = np.linspace(0, q_solver.max_timestep, len(states[0])-1)
-
-    plt.scatter(states[0][:-1], states[1][:-1], c=timesteps, edgecolor="white")      # last state has no associated reward
-    plt.colorbar()
-    plt.xlabel("pos")
-    plt.ylabel("vel")
-    plt.suptitle("sample trajectory colored by timestep")
+    img = axs[2].scatter(states[0][:-1], states[1][:-1], c=timesteps)      # last state has no associated reward
+    axs[2].set_aspect(1)
+    fig.colorbar(img, ax=axs[2])
+    axs[2].set_xlabel("pos")
+    axs[2].set_ylabel("vel")
+    axs[2].set_title("Sample trajectory colored by timestep")
+    
+    for ax in axs:
+        ax.set_xlabel("pos")
+        ax.set_ylabel("vel")
+    
     plt.show()
 
 def run_reinforce_softmax():
