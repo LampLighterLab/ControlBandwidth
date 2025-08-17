@@ -33,4 +33,14 @@ def test_pendulum():
     plt.ylabel("vel")
     plt.show()
 
-test_pendulum()
+#test_pendulum()
+
+def test():
+    X = np.linspace(-1*np.pi, np.pi, 100)
+    Y = np.cos(X)
+    
+    fig, ax = plt.subplots()
+    ax.plot(X, Y)
+    plt.show()
+
+test()

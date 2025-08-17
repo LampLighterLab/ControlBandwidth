@@ -53,11 +53,13 @@ def run_q_learning():
 def run_q_learning_pendulum():
     params = {"mass":1, "length":1, "gravity":1}
     initial_state = np.array([0.1, 0])
-    env = InvertedPendulum(params=params, initial_state=initial_state, sim_timestep = 0.01, control_timestep= 0.05)
+    env = InvertedPendulum(params=params, initial_state=initial_state, sim_timestep = 0.01, control_timestep= 0.5)
     q_solver = QLearningPendulum(env, initial_state=initial_state, epsilon=0.1, 
-                                 discount_factor=0.5, learning_rate=0.00001, max_timestep=20)
+                                 discount_factor=0, learning_rate=3e-5, max_timestep=20)
     
     fig, axs = plt.subplots(1,3)
+    fig.set_figheight(8)
+    fig.set_figwidth(16)
     
     # Run episodes and update Q approximation
     start = time.time_ns()
@@ -73,8 +75,8 @@ def run_q_learning_pendulum():
     
     x_min = -1 * np.pi
     x_max = np.pi
-    y_min = -1
-    y_max = 1
+    y_min = -0.5
+    y_max = 0.5
     res = 30            # Resolution of action-state space to sample
     max_torque = env.params["mass"] * env.params["gravity"] * env.params["length"]
     X = np.linspace(x_min, x_max, res) # State-action-space coordinates
@@ -102,10 +104,12 @@ def run_q_learning_pendulum():
     img = axs[0].imshow(max_q_vals, origin="lower", extent=[x_min, x_max, y_min, y_max])
     axs[0].set_title("Maximum Q-value over all actions")
     fig.colorbar(img, ax=axs[0])
+    axs[0].set_aspect((x_max - x_min) / (y_max - y_min))
     
     img = axs[1].imshow(max_q_actions, origin="lower", extent=[x_min, x_max, y_min, y_max])
     axs[1].set_title("Action with the maximum Q-value")
     fig.colorbar(img, ax=axs[1])
+    axs[1].set_aspect((x_max - x_min) / (y_max - y_min))
     
     # Right plot: sample episode
     
@@ -137,7 +141,7 @@ def run_q_learning_pendulum():
     
     # Plot sample trajectory
     timesteps = np.linspace(0, q_solver.max_timestep, len(states[0])-1)
-    img = axs[2].scatter(states[0][:-1], states[1][:-1], c=timesteps)      # last state has no associated reward
+    img = axs[2].scatter(states[0][:-1], states[1][:-1], c=timesteps, cmap="inferno")      # last state has no associated reward
     axs[2].set_aspect(1)
     fig.colorbar(img, ax=axs[2])
     axs[2].set_xlabel("pos")
