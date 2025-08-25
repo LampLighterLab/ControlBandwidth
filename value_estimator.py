@@ -69,23 +69,20 @@ class MonteCarloDiscrete:
 class MonteCarloContinuous:
     # Every-visit Monte Carlo with linear value func approx and continuous actions
 
-    def __init__(self, initial_state, environment, discount_factor, max_timestep=20):
+    def __init__(self, initial_state, environment, discount_factor, policy, max_timestep=20):
         self.initial_state = initial_state
         self.env = environment
         self.discount_factor = discount_factor
         self.max_timestep = max_timestep
+        self.get_next_action = policy           # function (state) -> real number
 
         self.weights = np.zeros(self.env.feature_vector(initial_state).shape[0])
         self.state = initial_state
         self.random_generator = np.random.default_rng(54321)
-        self.step_size = 0.00005
+        self.step_size = 1e-6
         
     def reset_state(self):
         self.state = self.initial_state
-    
-    #Policy
-    def get_next_action(self, s):
-        return 0.1 * self.random_generator.random() - 0.05
     
     def state_value_approx(self, s):
         return np.dot(self.weights, self.env.feature_vector(s))
@@ -110,7 +107,7 @@ class MonteCarloContinuous:
             i -= 1
             return_i = rewards[i] + self.discount_factor*return_i
             error = return_i - self.state_value_approx(states[i])
-            self.weights = self.weights + self.step_size * error * self.env.feature_vector(states[i])
+            self.weights = self.weights + self.step_size*error*self.env.feature_vector(states[i])
 
 class TDLambdaDiscrete:
     # Online TDLambda with dictionary value function and discrete actions

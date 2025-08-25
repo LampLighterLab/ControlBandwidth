@@ -6,6 +6,7 @@ import time
 from environment import Gridworld
 from value_estimator import MonteCarloDiscrete, TDLambdaDiscrete, MonteCarloContinuous
 from inverted_pendulum import InvertedPendulum
+from random import Random
 
 def run_monte_carlo_discrete():
     rewards = {
@@ -40,14 +41,18 @@ def run_monte_carlo_discrete():
     plt.show()
 
 def run_monte_carlo_continuous():
+    random_generator = np.random.default_rng(123)
     params = {"mass":1, "length":1, "gravity":1}
     initial_state = np.array([0.1, 0])
-    env = InvertedPendulum(params=params, initial_state=initial_state, sim_timestep = 0.05, control_timestep= 0.1)
-    mc = MonteCarloContinuous(initial_state, env, discount_factor=0, max_timestep=10)
+    def policy(s):
+        return 0
+        #return 0.1 * random_generator.random() - 0.05
+    env = InvertedPendulum(params=params, initial_state=initial_state, sim_timestep = 0.005, control_timestep= 0.1)
+    mc = MonteCarloContinuous(initial_state, env, discount_factor=0, policy=policy, max_timestep=1000)
     
     #Run episodes
     start = time.time_ns()
-    for i in range(n := 100):
+    for i in range(n := 1):
         mc.run_episode()
         # print(f"Weights: {mc.weights}")
     end = time.time_ns()
@@ -59,6 +64,7 @@ def run_monte_carlo_continuous():
     states = [curr_state]
     rewards = list()
     t = 0
+    print(f"Total energy of first state is {0.5*curr_state[1]**2 + (np.cos(curr_state[0]) - 1)}")
     while (t < mc.max_timestep):
         next_action = mc.get_next_action(curr_state)
         rewards.append(env.get_action_reward(next_action, curr_state))
@@ -66,6 +72,7 @@ def run_monte_carlo_continuous():
         states.append(curr_state)
         t += env.control_timestep
     states = np.array(states)
+    print(f"Total energy of last state is {0.5*states[-1][1]**2 + (np.cos(states[-1][0]) - 1)}")
     states = states.T
     states[0] = np.mod(states[0], 2 * np.pi)
     

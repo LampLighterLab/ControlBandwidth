@@ -106,6 +106,7 @@ class QLearningPendulum:
         
         self.weights = np.zeros(len(self.env.action_feature_vector(0, self.initial_state)))
         self.random_generator = np.random.default_rng(123)
+        self.episode_count = 0
     
     def action_value_approx(self, a, s):
         return np.dot(self.weights, self.env.action_feature_vector(a, s))
@@ -150,6 +151,7 @@ class QLearningPendulum:
             self.state = self.env.get_next_state(next_action, self.state)
             t += self.env.control_timestep
         self.update_weights(states, rewards, actions)
+        self.episode_count += 1
 
 class ReinforceSoftmax:
     # REINFORCE algorithm using the softmax policy
