@@ -13,17 +13,20 @@ def initialize_env_and_solver(sim_timestep, control_timestep):
     initial_state = np.array([0, 0.1])
     env = InvertedPendulum(params=params, initial_state=initial_state,
                            sim_timestep = sim_timestep, control_timestep= control_timestep)
-    q_solver = QLearningPendulum(env, initial_state=initial_state, epsilon=0.1, 
-                                 discount_factor=0, learning_rate=3e-5, max_timestep=20)
+    q_solver = QLearningPendulum(env, initial_state=initial_state, epsilon=0,
+                                 discount_factor=0, learning_rate=1e-5, max_timestep=20)
     return q_solver
 
 # Run episodes of Q-learning control method, return weights of state-value-function approximation
 # num_episodes > 0
 def get_approx_weights(q_solver, num_episodes):
     start = time.time_ns()
+    print("Running Q-Learning value function approximation")
     for i in range(n := num_episodes):
+        prev_weight_vector = q_solver.weights
         q_solver.run_episode()
-        print(f"Running episode {q_solver.episode_count}")
+        weight_update_size = np.linalg.norm(np.subtract(q_solver.weights, prev_weight_vector))
+        print(f"Running episode {q_solver.episode_count}, magnitude of weight update is {weight_update_size}")
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
@@ -40,9 +43,12 @@ def get_true_weights(q_solver):
     
     #Run episodes
     start = time.time_ns()
-    for i in range(n := 10):
+    print("Running Monte Carlo value function estimation")
+    for i in range(n := 100):
+        prev_weight_vector = mc.weights
         mc.run_episode()
-        print(f"Running episode {i}")
+        weight_update_size = np.linalg.norm(np.subtract(mc.weights, prev_weight_vector))
+        print(f"Running episode {i+1}, magnitude of weight update is {weight_update_size}")
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start)/n) / 1e6:.3f} ms per episode")
@@ -64,15 +70,15 @@ def plot_value_funcs(q_solver, approx_weights, true_weights):
     mc = MonteCarloContinuous(initial_state, env, discount_factor=0, policy=policy, max_timestep=100)
     mc.weights = true_weights
     
-    x_min = -1 * np.pi
+    x_min = -1 * np.pi                 # Limits of sampled state-space (x=pos, y=vel)
     x_max = np.pi
-    y_min = -0.5
-    y_max = 0.5
-    res = 30
+    y_min = -1
+    y_max = 1
+    res = 100                          # Resolution of state-space to sample
     X = np.linspace(x_min, x_max, res) # State-space coordinates
     Y = np.linspace(y_min, y_max, res)
     Z = np.zeros((res, res))
-    a = 0   # Array coordinates
+    a = 0                              # Array coordinates
     b = 0
     for x in X:
         for y in Y:
@@ -114,7 +120,7 @@ def plot_value_funcs(q_solver, approx_weights, true_weights):
         a += 1
     
     img = axs[1].imshow(max_q_vals, origin="lower", extent=[x_min, x_max, y_min, y_max])
-    axs[1].set_title("Maximum Q-value by state")
+    axs[1].set_title("Approximated value function\n(Maximum Q-value for each state)")
     fig.colorbar(img, ax=axs[1])
     axs[1].set_aspect((x_max - x_min) / (y_max - y_min))
     axs[1].set_xlabel("pos")
@@ -123,6 +129,6 @@ def plot_value_funcs(q_solver, approx_weights, true_weights):
     plt.show()
 
 q_solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
-approx_weights = get_approx_weights(q_solver, num_episodes=100)
+approx_weights = get_approx_weights(q_solver, num_episodes=200)
 true_weights = get_true_weights(q_solver)
 plot_value_funcs(q_solver, approx_weights, true_weights)

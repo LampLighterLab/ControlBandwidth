@@ -79,7 +79,7 @@ class MonteCarloContinuous:
         self.weights = np.zeros(self.env.feature_vector(initial_state).shape[0])
         self.state = initial_state
         self.random_generator = np.random.default_rng(54321)
-        self.step_size = 1e-6
+        self.step_size = 1e-5
         
     def reset_state(self):
         self.state = self.initial_state

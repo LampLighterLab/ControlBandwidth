@@ -113,14 +113,16 @@ class QLearningPendulum:
 
     # Generate next action, state according to epsilon-greedy policy
     def get_next_action(self, state):
+        # max_torque is the torque needed to hold the pendulum in static equilibrium when the arm is parallel to the ground
+        # This allows the controller to exert any torque from -max_torque to max_torque
         max_torque = self.env.params["mass"] * self.env.params["gravity"] * self.env.params["length"]
         r = self.random_generator.random()
         if (r < self.epsilon):
             return self.random_generator.random() * 2 * max_torque - max_torque
         
-        sample_torques = np.linspace(-1*max_torque, max_torque, 20)
-        max_q_action = sample_torques[0]
-        max_q_val = self.action_value_approx(max_q_action, state)
+        sample_torques = np.linspace(-1*max_torque, max_torque, 10)
+        max_q_action = 0
+        max_q_val = self.action_value_approx(0, state)
         for torque in sample_torques:
             sample_q_val = self.action_value_approx(torque, state)
             if (sample_q_val > max_q_val):

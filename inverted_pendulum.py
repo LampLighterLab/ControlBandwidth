@@ -24,7 +24,7 @@ class InvertedPendulum:
         return state
     
     def get_state_reward(self, s):
-        return (np.exp(np.cos(s[0])) - abs(s[1]))
+        return (np.exp(np.cos(s[0])) - 0.5*abs(s[1]))
     
     # The action is the applied torque
     def get_action_reward(self, a, s):
@@ -36,11 +36,11 @@ class InvertedPendulum:
         vel = s[1]
         KE = 0.5 * self.params["mass"] * vel**2
         PE = self.params["mass"] * self.params["gravity"] * self.params["length"] * (np.cos(pos) - 1)
-        return np.array([np.cos(pos), np.sin(pos), vel, KE, PE, 1])
+        return np.array([np.cos(pos), np.sin(pos), vel, abs(vel), KE, PE, 1])
     
     def action_feature_vector(self, a, s):
         pos = s[0]
         vel = s[1]
         KE = 0.5 * self.params["mass"] * vel**2
         PE = self.params["mass"] * self.params["gravity"] * self.params["length"] * (np.cos(pos) - 1)
-        return np.array([np.cos(pos), np.sin(pos), vel, KE, PE, 1, a*np.cos(pos), a*np.sin(pos), a*vel, a*KE, a*PE, a])
+        return np.array([np.cos(pos), np.sin(pos), vel, abs(vel), KE, PE, 1, a*np.cos(pos), a*np.sin(pos), a*vel, a*abs(vel), a*KE, a*PE, a])
