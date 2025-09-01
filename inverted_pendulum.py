@@ -32,6 +32,22 @@ class InvertedPendulum:
             t += self.sim_timestep
         return state
 
+    def get_potential_energy(self, state):
+        PE = (
+            self.params["mass"]
+            * self.params["gravity"]
+            * self.params["length"]
+            * (1 - np.cos(state[0, :]))
+        )
+        return PE
+
+    def get_kinetic_energy(self, state):
+        KE = self.params["mass"] / 2 * (self.params["length"] * state[1, :]) ** 2
+        return KE
+
+    def get_energy(self, state):
+        return self.get_potential_energy(state) + self.get_kinetic_energy(state)
+
     def get_state_reward(self, s):
         return np.exp(np.cos(s[0])) - 0.5 * abs(s[1])
 
@@ -60,7 +76,7 @@ class InvertedPendulum:
             self.params["mass"]
             * self.params["gravity"]
             * self.params["length"]
-            * (np.cos(pos) - 1)
+            * (1 - np.cos(pos))
         )
         return np.array(
             [
