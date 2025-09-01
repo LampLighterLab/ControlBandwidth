@@ -14,11 +14,11 @@ class InvertedPendulum:
         self.control_timestep = control_timestep
 
     def compute_dynamics(self, state, torque):
-        mass = self.params["mass"]
-        length = self.params["length"]
-        gravity = self.params["gravity"]
-        inertia = mass * length * length
-        acceleration = -(gravity * np.sin(state[0])) / length + torque / inertia
+        acceleration = (
+            -(self.params["gravity"] * np.sin(state[0])) / self.params["length"]
+            - self.params["damping"] * state[1]
+            + torque / self.params["mass"] * self.params["length"] ** 2
+        )
         return np.array([state[1], acceleration])
 
     def integrate_euler(self, state, torque, timestep):

@@ -5,13 +5,7 @@ from inverted_pendulum import InvertedPendulum
 
 # Testing the pendulum simulation
 def test_pendulum():
-    params = {"mass": 1, "length": 1, "gravity": 1}
-
-    def value_func(pos, vel):
-        return 0
-
-    # initial_state = np.array([0.5 * np.pi, 0.1])
-    params = {"mass": 1, "length": 1, "gravity": 1}
+    params = {"mass": 1, "length": 1, "gravity": 1, "damping": 0.1}
     initial_state = np.array([np.pi, 0.01])
     sim_timestep = 0.001
     control_timestep = 0.01
