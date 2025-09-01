@@ -26,7 +26,7 @@ class InvertedPendulum:
                 state,
                 np.multiply(
                     self.sim_timestep,
-                    [state[1], (g * np.sin(state[0])) / l + T_app / I],
+                    [state[1], -(g * np.sin(state[0])) / l + T_app / I],
                 ),
             )
             t += self.sim_timestep
