@@ -13,17 +13,30 @@ class InvertedPendulum:
         self.sim_timestep = sim_timestep
         self.control_timestep = control_timestep
 
-    # `T_app` is the applied torque on the pendulum
-    def get_next_state(self, torque, state):
+    def compute_dynamics(self, state, torque):
         mass = self.params["mass"]
         length = self.params["length"]
         gravity = self.params["gravity"]
         inertia = mass * length * length
-        timestep = self.sim_timestep
+        acceleration = -(gravity * np.sin(state[0])) / length + torque / inertia
+        return np.array([state[1], acceleration])
+
+    def integrate_euler(self, state, torque, timestep):
+        return state + timestep * self.compute_dynamics(state, torque)
+
+    def integrate_rk4(self, state, torque, timestep):
+        next_state = state
+        k1 = self.compute_dynamics(next_state, torque)
+        k2 = self.compute_dynamics(next_state + 0.5 * timestep * k1, torque)
+        k3 = self.compute_dynamics(next_state + 0.5 * timestep * k2, torque)
+        k4 = self.compute_dynamics(next_state + timestep * k3, torque)
+        next_state += (timestep / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
+
+        return next_state
+
+    def get_next_state(self, torque, state):
         for _ in range(int(self.control_timestep // self.sim_timestep)):
-            state += timestep * np.array(
-                [state[1], -(gravity * np.sin(state[0])) / length + torque / inertia]
-            )
+            state = self.integrate_rk4(state, torque, self.sim_timestep)
         return state
 
     def get_potential_energy(self, state):

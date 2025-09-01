@@ -13,7 +13,7 @@ def test_pendulum():
     # initial_state = np.array([0.5 * np.pi, 0.1])
     params = {"mass": 1, "length": 1, "gravity": 1}
     initial_state = np.array([np.pi, 0.01])
-    sim_timestep = 0.0001
+    sim_timestep = 0.001
     control_timestep = 0.01
     env = InvertedPendulum(
         params=params,
