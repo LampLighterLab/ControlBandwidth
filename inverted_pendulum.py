@@ -56,7 +56,7 @@ class InvertedPendulum:
         return self.get_potential_energy(state) + self.get_kinetic_energy(state)
 
     def get_state_reward(self, s):
-        return np.exp(np.cos(s[0])) - 0.5 * abs(s[1])
+        return np.exp(np.cos(s[0])) - 3 * abs(s[1])
 
     # The action is the applied torque
     def get_action_reward(self, a, s):

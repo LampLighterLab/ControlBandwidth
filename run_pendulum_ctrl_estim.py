@@ -10,8 +10,8 @@ from control_method import QLearning, ReinforceSoftmax, QLearningPendulum
 # Create pendulum environment and instance of QLearningPendulum
 # 0 < control_timestep <= sim_timestep
 def initialize_env_and_solver(sim_timestep, control_timestep):
-    params = {"mass": 1, "length": 1, "gravity": 1}
-    initial_state = np.array([0, 0.1])
+    params = {"mass": 1, "length": 1, "gravity": 1, "damping": 0.1}
+    initial_state = np.array([np.pi, 0.1])
     env = InvertedPendulum(
         params=params,
         initial_state=initial_state,
@@ -23,7 +23,7 @@ def initialize_env_and_solver(sim_timestep, control_timestep):
         initial_state=initial_state,
         epsilon=0,
         discount_factor=0,
-        learning_rate=1e-5,
+        learning_rate=1e-6,
         max_timestep=20,
     )
     return q_solver
@@ -50,9 +50,9 @@ def get_approx_weights(q_solver, num_episodes):
 
 
 # Run episodes of Monte Carlo value function estimation, return weights of state-value-function approximation
-def get_true_weights(q_solver):
+def get_true_weights(q_solver, num_episodes):
     random_generator = np.random.default_rng(123)
-    params = {"mass": 1, "length": 1, "gravity": 1}
+    params = {"mass": 1, "length": 1, "gravity": 1, "damping": 0}
     initial_state = np.array([0.1, 0])
     env = InvertedPendulum(
         params=params,
@@ -71,7 +71,7 @@ def get_true_weights(q_solver):
     # Run episodes
     start = time.time_ns()
     print("Running Monte Carlo value function estimation")
-    for i in range(n := 100):
+    for i in range(n := num_episodes):
         prev_weight_vector = mc.weights
         mc.run_episode()
         weight_update_size = np.linalg.norm(np.subtract(mc.weights, prev_weight_vector))
@@ -93,8 +93,8 @@ def compare_value_funcs():
 def plot_value_funcs(q_solver, approx_weights, true_weights):
     fig, axs = plt.subplots(1, 2)
 
-    params = {"mass": 1, "length": 1, "gravity": 1}
-    initial_state = np.array([0.1, 0])
+    params = {"mass": 1, "length": 1, "gravity": 1, "damping": 0.1}
+    initial_state = np.array([np.pi, 0.1])
 
     def policy(s):
         return 0
@@ -148,10 +148,10 @@ def plot_value_funcs(q_solver, approx_weights, true_weights):
     b = 0
     for x in X:
         for y in Y:
-            max_q_val = q_solver.action_value_approx(T[0], (a, b))
+            max_q_val = q_solver.action_value_approx(T[0], (x, y))
             max_q_action = T[0]
             for t in T:
-                q_val = q_solver.action_value_approx(t, (a, b))
+                q_val = q_solver.action_value_approx(t, (x, y))
                 if q_val > max_q_val:
                     max_q_val = q_val
                     max_q_action = t
@@ -168,10 +168,30 @@ def plot_value_funcs(q_solver, approx_weights, true_weights):
     axs[1].set_xlabel("pos")
     axs[1].set_ylabel("vel")
 
+
+    sim_time = 10
+    sim_timestep = 0.01
+    state_traj = np.zeros((initial_state.size, int(sim_time // sim_timestep) + 1))
+    state_traj[:, 0] = initial_state
+    for i in range(int(sim_time // sim_timestep)):
+        state_traj[:, i + 1] = env.get_next_state(0, state_traj[:, i])
+    state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
+
+    plt.figure(2)
+    plt.scatter(
+        state_traj[0, :], state_traj[1, :], c=range(int(sim_time // sim_timestep) + 1)
+    )
+    plt.title("State space")
+    plt.colorbar(label="Timestep")
+    plt.xlabel("pos")
+    plt.ylabel("vel")
+
+
     plt.show()
+
 
 
 q_solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
 approx_weights = get_approx_weights(q_solver, num_episodes=200)
-true_weights = get_true_weights(q_solver)
+true_weights = get_true_weights(q_solver, num_episodes=5)
 plot_value_funcs(q_solver, approx_weights, true_weights)
