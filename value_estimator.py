@@ -103,10 +103,10 @@ class MonteCarloContinuous:
         self.weights = np.zeros(self.env.feature_vector(initial_state).shape[0])
         self.state = initial_state
         self.random_generator = np.random.default_rng(54321)
-        self.step_size = 1e-5
+        self.step_size = 1e-7
 
     def reset_state(self):
-        self.state = self.initial_state
+        self.state = (self.initial_state[0], self.initial_state[1])
 
     def state_value_approx(self, s):
         return np.dot(self.weights, self.env.feature_vector(s))

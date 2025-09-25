@@ -4,23 +4,20 @@ import time
 from environment import Gridworld
 from control_method import QLearning
 
+
 def test_select_max():
     # Testing code used to select max torque from a range
 
     def func(x):
         return -1 * ((x - 0.5) ** 2)
 
-    max_torque = 1.0
-    sample_torques = np.linspace(-1 * max_torque, max_torque, 10)
-    max_q_action = -1 * max_torque
-    max_q_val = func(-1 * max_torque)
-    for torque in sample_torques:
-        sample_q_val = func(torque)
-        if sample_q_val > max_q_val:
-            max_q_val = sample_q_val
-            max_q_action = torque
-    print(max_q_action)
-    return max_q_action
+    max_torque = 1
+    sample_torques = np.linspace(-1 * max_torque, max_torque, 15)
+    sample_q_vals = np.zeros(sample_torques.size)
+    for i in range(sample_torques.size):
+        sample_q_vals[i] = func(sample_torques[i])
+    print(sample_torques[np.argmax(sample_q_vals)])
+
 
 test_select_max()
 

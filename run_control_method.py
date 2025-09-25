@@ -54,7 +54,7 @@ def run_q_learning():
 
 def run_q_learning_pendulum():
     params = {"mass": 1, "length": 1, "gravity": 1, "damping": 0.1}
-    initial_state = np.array([0.1, 0])
+    initial_state = np.array([np.pi, 0.1])
     env = InvertedPendulum(
         params=params,
         initial_state=initial_state,
@@ -67,7 +67,7 @@ def run_q_learning_pendulum():
         epsilon=0.1,
         discount_factor=0.9,
         learning_rate=3e-5,
-        max_timestep=20,
+        max_timestep=60,
     )
 
     fig, axs = plt.subplots(1, 3)
@@ -76,7 +76,7 @@ def run_q_learning_pendulum():
 
     # Run episodes and update Q approximation
     start = time.time_ns()
-    for i in range(n := 1000):
+    for i in range(n := 200):
         q_solver.run_episode()
         if (i % 100) == 0:
             print(f"Running episode {i}")
