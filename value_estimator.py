@@ -105,15 +105,12 @@ class MonteCarloContinuous:
         self.random_generator = np.random.default_rng(54321)
         self.step_size = 1e-7
 
-    def reset_state(self):
-        self.state = (self.initial_state[0], self.initial_state[1])
-
     def state_value_approx(self, s):
         return np.dot(self.weights, self.env.feature_vector(s))
 
     # Generate one episode and update agent's value function
     def run_episode(self):
-        self.reset_state()
+        self.state = self.initial_state.copy()
         states = list()  # states[n]: state at timestep n
         rewards = list()  # rewards[n]: reward at timestep n+1
         t = 0

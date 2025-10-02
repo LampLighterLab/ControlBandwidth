@@ -98,12 +98,16 @@ def plot_value_funcs(q_solver, approx_weights, true_weights):
         control_timestep=q_solver.env.control_timestep,
     )
     mc = MonteCarloContinuous(
-        initial_state, env, discount_factor=q_solver.discount_factor, policy=q_solver.get_next_action, max_timestep=q_solver.max_timestep
+        initial_state,
+        env,
+        discount_factor=q_solver.discount_factor,
+        policy=q_solver.get_next_action,
+        max_timestep=q_solver.max_timestep,
     )
     mc.weights = true_weights
 
     x_min = 0  # Limits of sampled state-space (x=pos, y=vel)
-    x_max = 2 *np.pi
+    x_max = 2 * np.pi
     y_min = -1
     y_max = 1
     res = 100  # Resolution of state-space to sample
@@ -163,7 +167,9 @@ def plot_value_funcs(q_solver, approx_weights, true_weights):
     q_solver.state = q_solver.initial_state
     for i in range(int(sim_time // sim_timestep)):
         # set first argument to 0 to test without control
-        next_state = env.get_next_state(q_solver.get_next_action(q_solver.state), state_traj[:, i])
+        next_state = env.get_next_state(
+            q_solver.get_next_action(q_solver.state), state_traj[:, i]
+        )
         state_traj[:, i + 1] = next_state
         q_solver.state = next_state
     state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
@@ -181,6 +187,6 @@ def plot_value_funcs(q_solver, approx_weights, true_weights):
 
 
 q_solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
-approx_weights = get_approx_weights(q_solver, num_episodes=5)
+approx_weights = get_approx_weights(q_solver, num_episodes=1)
 true_weights = get_true_weights(q_solver, num_episodes=2)
 plot_value_funcs(q_solver, approx_weights, true_weights)

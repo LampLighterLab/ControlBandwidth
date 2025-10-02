@@ -98,6 +98,6 @@ class InvertedPendulum:
                 a * np.sin(pos),
                 a * vel,
                 a * abs(vel),
-                a
+                a,
             ]
         )

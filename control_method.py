@@ -165,7 +165,9 @@ class QLearningPendulum:
         sample_torques = np.linspace(-1 * max_torque, max_torque, 11)
         sample_q_vals = np.zeros(sample_torques.size)
         for i in range(sample_torques.size):
-            sample_q_vals[i] = self.action_value_approx(sample_torques[i], state) # maybe more efficient with vectorized function
+            sample_q_vals[i] = self.action_value_approx(
+                sample_torques[i], state
+            )  # maybe more efficient with vectorized function
         return sample_torques[np.argmax(sample_q_vals)]
 
     def update_weights(self, states, rewards, actions):
@@ -183,7 +185,7 @@ class QLearningPendulum:
             )
 
     def run_episode(self):
-        self.state = (self.initial_state[0], self.initial_state[1])
+        self.state = self.initial_state.copy()
         t = 0
         states = list()
         rewards = list()

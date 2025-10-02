@@ -5,10 +5,10 @@ from inverted_pendulum import InvertedPendulum
 
 # Testing the pendulum simulation
 def test_pendulum():
-    params = {"mass": 1, "length": 1, "gravity": 1, "damping": 0.1}
-    initial_state = np.array([np.pi, 0.01])
-    sim_timestep = 0.001
-    control_timestep = 0.01
+    params = {"mass": 1, "length": 1, "gravity": 1, "damping": 0.0}
+    initial_state = np.array([0.2, 0.0])
+    sim_timestep = 0.01
+    control_timestep = 0.1
     env = InvertedPendulum(
         params=params,
         initial_state=initial_state,
@@ -16,7 +16,7 @@ def test_pendulum():
         control_timestep=control_timestep,
     )
 
-    sim_time = 10
+    sim_time = 2 * np.pi * 0.1
     state_traj = np.zeros((initial_state.size, int(sim_time // sim_timestep) + 1))
     state_traj[:, 0] = initial_state
     for i in range(int(sim_time // sim_timestep)):
@@ -47,18 +47,6 @@ def test_pendulum():
     plt.plot(time_traj, potential_energy + kinetic_energy)
     plt.ylabel("totla energy [j]")
     plt.xlabel("time [s]")
-    plt.show()
-
-
-# test_pendulum()
-
-
-def test():
-    X = np.linspace(-1 * np.pi, np.pi, 100)
-    Y = np.cos(X)
-
-    fig, ax = plt.subplots()
-    ax.plot(X, Y)
     plt.show()
 
 
