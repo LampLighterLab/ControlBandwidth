@@ -78,8 +78,55 @@ def get_true_weights(q_solver, num_episodes):
 
 
 # Normalize both approximation and true value function, and plot them and generate statistics (TBD)
-def compare_value_funcs():
-    pass
+def compare_value_funcs(approx_weights, true_weights, q_solver):
+    # `approx_weights` and `true_weights` are weights of the action-value func approximation
+    # Returns the Euclidean distance between a vector of samples of the two approximations over state-space,
+    # after normalizing sample to [0,1]
+
+    # Sample range
+    pos_min = -1 * np.pi
+    pos_max = np.pi
+    vel_min = -1
+    vel_max = 1
+    torque_min = -1
+    torque_max = 1
+    res_pos = 20  # Sampling resolution along each axis
+    res_vel = 20
+    res_torque = 5
+    approx_q_samples = np.zeros((res_pos, res_vel))
+    true_q_samples = np.zeros((res_pos, res_vel))
+
+    pos_space = np.linspace(pos_min, pos_max, res_pos)
+    vel_space = np.linspace(vel_min, vel_max, res_vel)
+    torque_space = np.linspace(torque_min, torque_max, res_torque)
+
+    for i in range(pos_space.size):
+        for j in range(vel_space.size):
+            state = np.array([pos_space[i], vel_space[j]])
+            sample_q_vals = np.zeros(res_torque)
+            for k in range(res_torque):
+                sample_q_vals[k] = q_solver.action_value_approx(torque_space[k], state)
+            best_torque = torque_space[np.argmax(sample_q_vals)]
+
+            approx_q_samples[i, j] = np.dot(
+                approx_weights, q_solver.env.action_feature_vector(best_torque, state)
+            )
+            true_q_samples[i, j] = np.dot(
+                true_weights, q_solver.env.feature_vector(state)
+            )
+
+    approx_min = np.min(approx_q_samples)
+    approx_max = np.max(approx_q_samples)
+    true_min = np.min(true_q_samples)
+    true_max = np.max(true_q_samples)
+
+    approx_q_samples = (approx_q_samples - [approx_min]) / ([approx_max - approx_min])
+    true_q_samples = (true_q_samples - [true_min]) / ([true_max - true_min])
+
+    approx_q_samples = np.reshape(approx_q_samples, shape=(-1,))
+    true_q_samples = np.reshape(true_q_samples, shape=(-1,))
+
+    return np.linalg.norm(approx_q_samples - true_q_samples)
 
 
 # Plot both approx and true value function
@@ -110,18 +157,18 @@ def plot_value_funcs(q_solver, approx_weights, true_weights):
     x_max = 2 * np.pi
     y_min = -1
     y_max = 1
-    res = 100  # Resolution of state-space to sample
+    res = 50  # Resolution of state-space to sample
     X = np.linspace(x_min, x_max, res)  # State-space coordinates
     Y = np.linspace(y_min, y_max, res)
     Z = np.zeros((res, res))
-    a = 0  # Array coordinates
-    b = 0
+    arr_x = 0  # Array coordinates
+    arr_y = 0
     for x in X:
         for y in Y:
-            Z[b, a] = mc.state_value_approx((x, y))
-            b += 1
-        b = 0
-        a += 1
+            Z[arr_y, arr_x] = mc.state_value_approx((x, y))
+            arr_y += 1
+        arr_y = 0
+        arr_x += 1
 
     img = axs[0].imshow(
         Z, origin="lower", extent=[x_min, x_max, y_min, y_max], aspect="auto"
@@ -140,18 +187,18 @@ def plot_value_funcs(q_solver, approx_weights, true_weights):
     max_q_vals = np.zeros((res, res))
     max_q_actions = np.zeros((res, res))
     T = np.linspace(-1 * max_torque, max_torque, 11)
-    a = 0  # Array coordinates
-    b = 0
+    arr_x = 0  # Array coordinates
+    arr_y = 0
     for x in X:
         for y in Y:
             sample_qs_at_x_y = np.zeros(T.size)
             for i in range(T.size):
                 sample_qs_at_x_y = q_solver.action_value_approx(T[i], (x, y))
-            max_q_vals[b, a] = np.max(sample_qs_at_x_y)
-            max_q_actions[b, a] = np.argmax(sample_qs_at_x_y)
-            b += 1
-        b = 0
-        a += 1
+            max_q_vals[arr_y, arr_x] = np.max(sample_qs_at_x_y)
+            max_q_actions[arr_y, arr_x] = np.argmax(sample_qs_at_x_y)
+            arr_y += 1
+        arr_y = 0
+        arr_x += 1
 
     img = axs[1].imshow(max_q_vals, origin="lower", extent=[x_min, x_max, y_min, y_max])
     axs[1].set_title("Approximated value function\n(Maximum Q-value for each state)")
@@ -189,4 +236,5 @@ def plot_value_funcs(q_solver, approx_weights, true_weights):
 q_solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
 approx_weights = get_approx_weights(q_solver, num_episodes=1)
 true_weights = get_true_weights(q_solver, num_episodes=2)
+print(compare_value_funcs(approx_weights, true_weights, q_solver))
 plot_value_funcs(q_solver, approx_weights, true_weights)

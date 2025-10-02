@@ -17,7 +17,7 @@ class InvertedPendulum:
         acceleration = (
             -(self.params["gravity"] * np.sin(state[0])) / self.params["length"]
             - self.params["damping"] * state[1]
-            + torque / self.params["mass"] * self.params["length"] ** 2
+            + torque / (self.params["mass"] * self.params["length"] ** 2)
         )
         return np.array([state[1], acceleration])
 
