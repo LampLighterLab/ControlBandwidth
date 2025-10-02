@@ -90,30 +90,28 @@ def compare_value_funcs(approx_weights, true_weights, q_solver):
     vel_max = 1
     torque_min = -1
     torque_max = 1
-    res_pos = 20  # Sampling resolution along each axis
+    res_pos = 20 # Sampling resolution along each axis
     res_vel = 20
     res_torque = 5
     approx_q_samples = np.zeros((res_pos, res_vel))
     true_q_samples = np.zeros((res_pos, res_vel))
-
+    
     pos_space = np.linspace(pos_min, pos_max, res_pos)
     vel_space = np.linspace(vel_min, vel_max, res_vel)
     torque_space = np.linspace(torque_min, torque_max, res_torque)
 
     for i in range(pos_space.size):
         for j in range(vel_space.size):
-            state = np.array([pos_space[i], vel_space[j]])
+            state = np.array([pos_space[i],vel_space[j]])
             sample_q_vals = np.zeros(res_torque)
             for k in range(res_torque):
                 sample_q_vals[k] = q_solver.action_value_approx(torque_space[k], state)
             best_torque = torque_space[np.argmax(sample_q_vals)]
 
-            approx_q_samples[i, j] = np.dot(
-                approx_weights, q_solver.env.action_feature_vector(best_torque, state)
-            )
-            true_q_samples[i, j] = np.dot(
-                true_weights, q_solver.env.feature_vector(state)
-            )
+            approx_q_samples[i,j] = np.dot(approx_weights, 
+                                      q_solver.env.action_feature_vector(best_torque, state))
+            true_q_samples[i,j] = np.dot(true_weights, 
+                                      q_solver.env.feature_vector(state))
 
     approx_min = np.min(approx_q_samples)
     approx_max = np.max(approx_q_samples)
