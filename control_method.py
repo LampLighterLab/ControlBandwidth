@@ -192,10 +192,11 @@ class QLearningPendulum:
         actions = list()
         while t < self.max_timestep:
             next_action = self.get_next_action(self.state)
+            next_state = self.env.get_next_state(next_action, self.state)
             states.append(self.state)
-            rewards.append(self.env.get_action_reward(next_action, self.state))
+            rewards.append(self.env.get_state_reward(next_state))
             actions.append(next_action)
-            self.state = self.env.get_next_state(next_action, self.state)
+            self.state = next_state
             t += self.env.control_timestep
         self.update_weights(states, rewards, actions)
         self.episode_count += 1
