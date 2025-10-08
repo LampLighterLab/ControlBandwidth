@@ -24,7 +24,7 @@ def initialize_env_and_solver(sim_timestep, control_timestep):
         epsilon=0,
         discount_factor=0.9,
         learning_rate=1e-8,
-        max_timestep=60,
+        max_timestep=100,
     )
     return q_solver
 
@@ -49,32 +49,38 @@ def get_approx_weights(q_solver, num_episodes):
     return q_solver.weights
 
 
-# Run episodes of Monte Carlo value function estimation, return weights of state-value-function approximation
-def get_true_weights(q_solver, num_episodes):
-    random_generator = np.random.default_rng(123)
+# Return res x res matrix (representing true value function) running sample episodes to sample true value function
+def get_true_value_func_samples(q_solver, res, pos_min, pos_max, vel_min, vel_max):
+    env = q_solver.env
+    pos_space = np.linspace(pos_min, pos_max, res)
+    vel_space = np.linspace(vel_min, vel_max, res)
+    true_samples = np.zeros((res, res))
 
-    mc = MonteCarloContinuous(
-        q_solver.initial_state,
-        q_solver.env,
-        discount_factor=0,
-        policy=q_solver.get_next_action,
-        max_timestep=q_solver.max_timestep,
-    )
+    for pos_i in range(res):
+        for vel_i in range(res):
+            state_traj = np.zeros(
+                (
+                    q_solver.initial_state.size,
+                    int(q_solver.max_timestep // env.control_timestep) + 1,
+                )
+            )
+            state_traj[:, 0] = np.array([pos_space[pos_i], vel_space[vel_i]])
+            rewards = np.zeros(int(q_solver.max_timestep // env.control_timestep))
+            for t in range(int(q_solver.max_timestep // env.control_timestep)):
+                next_action = q_solver.get_next_action(state_traj[:, t])
+                state_traj[:, t + 1] = env.get_next_state(next_action, state_traj[:, t])
+                rewards[t] = env.get_state_reward(state_traj[:, t])
+            state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
 
-    # Run episodes
-    start = time.time_ns()
-    print("Running Monte Carlo value function estimation")
-    for i in range(n := num_episodes):
-        prev_weight_vector = mc.weights
-        mc.run_episode()
-        weight_update_size = np.linalg.norm(np.subtract(mc.weights, prev_weight_vector))
-        print(
-            f"Running episode {i + 1}, magnitude of weight update is {weight_update_size}"
-        )
-    end = time.time_ns()
-    print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
-    print(f"Averaged {((end - start) / n) / 1e6:.3f} ms per episode")
-    return mc.weights
+            return_i = rewards[-1]
+            for i in range(rewards.shape[0] - 1):
+                return_i *= q_solver.discount_factor
+                return_i += rewards[rewards.shape[0] - i - 1]
+            true_samples[vel_i, pos_i] = (
+                return_i  # Note: this is so `pos` is on x-axis and `vel` on y-axis
+            )
+
+    return true_samples
 
 
 # Normalize both approximation and true value function, and plot them and generate statistics (TBD)
@@ -90,28 +96,30 @@ def compare_value_funcs(approx_weights, true_weights, q_solver):
     vel_max = 1
     torque_min = -1
     torque_max = 1
-    res_pos = 20 # Sampling resolution along each axis
+    res_pos = 20  # Sampling resolution along each axis
     res_vel = 20
     res_torque = 5
     approx_q_samples = np.zeros((res_pos, res_vel))
     true_q_samples = np.zeros((res_pos, res_vel))
-    
+
     pos_space = np.linspace(pos_min, pos_max, res_pos)
     vel_space = np.linspace(vel_min, vel_max, res_vel)
     torque_space = np.linspace(torque_min, torque_max, res_torque)
 
     for i in range(pos_space.size):
         for j in range(vel_space.size):
-            state = np.array([pos_space[i],vel_space[j]])
+            state = np.array([pos_space[i], vel_space[j]])
             sample_q_vals = np.zeros(res_torque)
             for k in range(res_torque):
                 sample_q_vals[k] = q_solver.action_value_approx(torque_space[k], state)
             best_torque = torque_space[np.argmax(sample_q_vals)]
 
-            approx_q_samples[i,j] = np.dot(approx_weights, 
-                                      q_solver.env.action_feature_vector(best_torque, state))
-            true_q_samples[i,j] = np.dot(true_weights, 
-                                      q_solver.env.feature_vector(state))
+            approx_q_samples[i, j] = np.dot(
+                approx_weights, q_solver.env.action_feature_vector(best_torque, state)
+            )
+            true_q_samples[i, j] = np.dot(
+                true_weights, q_solver.env.feature_vector(state)
+            )
 
     approx_min = np.min(approx_q_samples)
     approx_max = np.max(approx_q_samples)
@@ -128,7 +136,7 @@ def compare_value_funcs(approx_weights, true_weights, q_solver):
 
 
 # Plot both approx and true value function
-def plot_value_funcs(q_solver, approx_weights, true_weights):
+def plot_value_funcs(q_solver, approx_weights, true_value_samples):
     fig, axs = plt.subplots(1, 2)
 
     initial_state = q_solver.initial_state
@@ -231,8 +239,16 @@ def plot_value_funcs(q_solver, approx_weights, true_weights):
     plt.show()
 
 
+"""
 q_solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
-approx_weights = get_approx_weights(q_solver, num_episodes=1)
-true_weights = get_true_weights(q_solver, num_episodes=2)
+approx_weights = get_approx_weights(q_solver, num_episodes=10)
+
 print(compare_value_funcs(approx_weights, true_weights, q_solver))
 plot_value_funcs(q_solver, approx_weights, true_weights)
+"""
+q_solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
+true_weights = get_true_value_func_samples(
+    q_solver=q_solver, res=20, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
+)
+plt.imshow(true_weights, origin="lower")
+plt.show()
