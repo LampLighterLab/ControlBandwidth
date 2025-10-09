@@ -140,7 +140,7 @@ class QLearningPendulum:
         self.max_timestep = max_timestep
 
         self.max_torque = (
-            1
+            0.2
             * self.env.params["mass"]
             * self.env.params["gravity"]
             * self.env.params["length"]

@@ -10,7 +10,7 @@ from control_method import QLearning, ReinforceSoftmax, QLearningPendulum
 # Create pendulum environment and instance of QLearningPendulum
 # 0 < control_timestep <= sim_timestep
 def initialize_env_and_solver(sim_timestep, control_timestep):
-    params = {"mass": 1, "length": 1, "gravity": 1, "damping": 0.05}
+    params = {"mass": 1, "length": 1, "gravity": 1, "damping": 0.01}
     initial_state = np.array([np.pi + 0.1, 0])
     env = InvertedPendulum(
         params=params,
@@ -225,6 +225,6 @@ def plot_value_funcs(solver, approx_weights, true_value_samples, res):
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
 approx_weights = get_approx_weights(solver, num_episodes=100)
 true_weights = get_true_value_func_samples(
-    solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
+    solver=solver, res=20, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
 )
-plot_value_funcs(solver, approx_weights, true_weights, res=10)
+plot_value_funcs(solver, approx_weights, true_weights, res=20)
