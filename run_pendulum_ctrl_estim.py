@@ -68,7 +68,9 @@ def get_true_value_func_samples(solver, res, pos_min, pos_max, vel_min, vel_max)
             state_traj[:, 0] = np.array([pos_space[pos_i], vel_space[vel_i]])
             rewards = np.zeros(int(solver.max_timestep // env.control_timestep))
             for t in range(int(solver.max_timestep // env.control_timestep)):
-                next_action = solver.get_epsilon_greedy_action(state_traj[:, t], epsilon=0)
+                next_action = solver.get_epsilon_greedy_action(
+                    state_traj[:, t], epsilon=0
+                )
                 state_traj[:, t + 1] = env.get_next_state(next_action, state_traj[:, t])
                 rewards[t] = env.get_state_reward(state_traj[:, t])
             state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
@@ -155,7 +157,10 @@ def plot_value_funcs(solver, approx_weights, true_value_samples, res):
     y_max = 1
 
     img = axs[0].imshow(
-        true_value_samples, origin="lower", extent=[x_min, x_max, y_min, y_max], aspect="auto"
+        true_value_samples,
+        origin="lower",
+        extent=[x_min, x_max, y_min, y_max],
+        aspect="auto",
     )
     fig.colorbar(img, ax=axs[0])
     axs[0].set_aspect((x_max - x_min) / (y_max - y_min))
@@ -215,7 +220,6 @@ def plot_value_funcs(solver, approx_weights, true_value_samples, res):
     plt.ylabel("vel")
 
     plt.show()
-
 
 
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)

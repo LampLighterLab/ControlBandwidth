@@ -139,8 +139,12 @@ class QLearningPendulum:
         self.learning_rate = learning_rate
         self.max_timestep = max_timestep
 
-
-        self.max_torque = 1 * self.env.params["mass"] * self.env.params["gravity"] * self.env.params["length"]
+        self.max_torque = (
+            1
+            * self.env.params["mass"]
+            * self.env.params["gravity"]
+            * self.env.params["length"]
+        )
         self.weights = np.zeros(
             len(self.env.action_feature_vector(0, self.initial_state))
         )
@@ -158,7 +162,9 @@ class QLearningPendulum:
 
         r = self.random_generator.random()
         if r < epsilon:
-            return self.random_generator.random() * 2 * self.max_torque - self.max_torque
+            return (
+                self.random_generator.random() * 2 * self.max_torque - self.max_torque
+            )
 
         sample_torques = np.linspace(-1 * self.max_torque, self.max_torque, 5)
         sample_q_vals = np.zeros(sample_torques.size)
@@ -179,7 +185,7 @@ class QLearningPendulum:
                 self.weights,
                 self.learning_rate
                 * mc_error
-                * self.env.action_feature_vector(actions[i], states[i])
+                * self.env.action_feature_vector(actions[i], states[i]),
             )
 
     def run_episode(self):
@@ -187,26 +193,39 @@ class QLearningPendulum:
 
         t_max = int(self.max_timestep // self.env.control_timestep)
         # states[:, t] is the state [pos, vel] at timestep t
-        states = np.zeros((
-                    self.initial_state.size,
-                    t_max + 1
-                ))
+        states = np.zeros((self.initial_state.size, t_max + 1))
         rewards = np.zeros((t_max,))
         actions = np.zeros((t_max,))
         states[:, 0] = self.initial_state.copy()
         for t in range(t_max):
-            actions[t] = self.get_epsilon_greedy_action(states[:, t], epsilon=self.epsilon)
-            states[:, t+1] = self.env.get_next_state(actions[t], states[:, t])
-            rewards[t] = self.env.get_state_reward(states[:, t+1])
+            actions[t] = self.get_epsilon_greedy_action(
+                states[:, t], epsilon=self.epsilon
+            )
+            states[:, t + 1] = self.env.get_next_state(actions[t], states[:, t])
+            rewards[t] = self.env.get_state_reward(states[:, t + 1])
             # Update weights: Q(s,a) <- alpha*(R(s,a) + gamma*max(Q(s',a')) - Q(s,a))
             # Get max Q(s',a') using Q-value approx
-            max_q_next_action = np.dot(self.weights, self.env.action_feature_vector(
-                self.get_epsilon_greedy_action(states[:, t+1], epsilon=0), states[:, t+1]
-            ))
-            q_error = rewards[t] + self.discount_factor * max_q_next_action - np.dot(
-                self.weights, self.env.action_feature_vector(actions[t], states[:, t]))
-            self.weights = np.add(self.weights, self.learning_rate * q_error
-                                  * self.env.action_feature_vector(actions[t], states[:, t]))
+            max_q_next_action = np.dot(
+                self.weights,
+                self.env.action_feature_vector(
+                    self.get_epsilon_greedy_action(states[:, t + 1], epsilon=0),
+                    states[:, t + 1],
+                ),
+            )
+            q_error = (
+                rewards[t]
+                + self.discount_factor * max_q_next_action
+                - np.dot(
+                    self.weights,
+                    self.env.action_feature_vector(actions[t], states[:, t]),
+                )
+            )
+            self.weights = np.add(
+                self.weights,
+                self.learning_rate
+                * q_error
+                * self.env.action_feature_vector(actions[t], states[:, t]),
+            )
         self.episode_count += 1
 
 
