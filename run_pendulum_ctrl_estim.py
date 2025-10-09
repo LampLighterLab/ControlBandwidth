@@ -87,7 +87,7 @@ def get_true_value_func_samples(solver, res, pos_min, pos_max, vel_min, vel_max)
 
 
 # Normalize both approximation and true value function, and plot them and generate statistics (TBD)
-def compare_value_funcs(approx_weights, true_weights, solver):
+def compare_value_funcs(approx_weights, true_value_samples, solver):
     # `approx_weights` and `true_weights` are weights of the action-value func approximation
     # Returns the Euclidean distance between a vector of samples of the two approximations over state-space,
     # after normalizing sample to [0,1]
@@ -224,7 +224,7 @@ def plot_value_funcs(solver, approx_weights, true_value_samples, res):
 
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
 approx_weights = get_approx_weights(solver, num_episodes=100)
-true_weights = get_true_value_func_samples(
+true_value_samples = get_true_value_func_samples(
     solver=solver, res=20, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
 )
-plot_value_funcs(solver, approx_weights, true_weights, res=20)
+plot_value_funcs(solver, approx_weights, true_value_samples, res=20)
