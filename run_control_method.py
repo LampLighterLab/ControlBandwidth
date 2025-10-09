@@ -137,7 +137,7 @@ def run_q_learning_pendulum():
     rewards = list()
     t = 0
     while t < q_solver.max_timestep:
-        next_action = q_solver.get_next_action(curr_state)
+        next_action = q_solver.get_epsilon_greedy_action(curr_state)
         rewards.append(env.get_action_reward(next_action, curr_state))
         curr_state = env.get_next_state(next_action, curr_state)
         states.append(curr_state)

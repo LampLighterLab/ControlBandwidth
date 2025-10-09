@@ -139,6 +139,8 @@ class QLearningPendulum:
         self.learning_rate = learning_rate
         self.max_timestep = max_timestep
 
+
+        self.max_torque = 1 * self.env.params["mass"] * self.env.params["gravity"] * self.env.params["length"]
         self.weights = np.zeros(
             len(self.env.action_feature_vector(0, self.initial_state))
         )
@@ -149,20 +151,16 @@ class QLearningPendulum:
         return np.dot(self.weights, self.env.action_feature_vector(a, s))
 
     # Generate next action, state according to epsilon-greedy policy
-    def get_next_action(self, state):
+    def get_epsilon_greedy_action(self, state, epsilon):
         # max_torque is the torque needed to hold the pendulum in static equilibrium
         # when the arm is parallel to the ground, multiplied by a constant
         # This allows the controller to exert any torque from -max_torque to max_torque
-        max_torque = (
-            self.env.params["mass"]
-            * self.env.params["gravity"]
-            * self.env.params["length"]
-        )
-        r = self.random_generator.random()
-        if r < self.epsilon:
-            return self.random_generator.random() * 2 * max_torque - max_torque
 
-        sample_torques = np.linspace(-1 * max_torque, max_torque, 11)
+        r = self.random_generator.random()
+        if r < epsilon:
+            return self.random_generator.random() * 2 * self.max_torque - self.max_torque
+
+        sample_torques = np.linspace(-1 * self.max_torque, self.max_torque, 5)
         sample_q_vals = np.zeros(sample_torques.size)
         for i in range(sample_torques.size):
             sample_q_vals[i] = self.action_value_approx(
@@ -181,24 +179,34 @@ class QLearningPendulum:
                 self.weights,
                 self.learning_rate
                 * mc_error
-                * self.env.action_feature_vector(actions[i], states[i]),
+                * self.env.action_feature_vector(actions[i], states[i])
             )
 
     def run_episode(self):
         self.state = self.initial_state.copy()
-        t = 0
-        states = list()
-        rewards = list()
-        actions = list()
-        while t < self.max_timestep:
-            next_action = self.get_next_action(self.state)
-            next_state = self.env.get_next_state(next_action, self.state)
-            states.append(self.state)
-            rewards.append(self.env.get_state_reward(next_state))
-            actions.append(next_action)
-            self.state = next_state
-            t += self.env.control_timestep
-        self.update_weights(states, rewards, actions)
+
+        t_max = int(self.max_timestep // self.env.control_timestep)
+        # states[:, t] is the state [pos, vel] at timestep t
+        states = np.zeros((
+                    self.initial_state.size,
+                    t_max + 1
+                ))
+        rewards = np.zeros((t_max,))
+        actions = np.zeros((t_max,))
+        states[:, 0] = self.initial_state.copy()
+        for t in range(t_max):
+            actions[t] = self.get_epsilon_greedy_action(states[:, t], epsilon=self.epsilon)
+            states[:, t+1] = self.env.get_next_state(actions[t], states[:, t])
+            rewards[t] = self.env.get_state_reward(states[:, t+1])
+            # Update weights: Q(s,a) <- alpha*(R(s,a) + gamma*max(Q(s',a')) - Q(s,a))
+            # Get max Q(s',a') using Q-value approx
+            max_q_next_action = np.dot(self.weights, self.env.action_feature_vector(
+                self.get_epsilon_greedy_action(states[:, t+1], epsilon=0), states[:, t+1]
+            ))
+            q_error = rewards[t] + self.discount_factor * max_q_next_action - np.dot(
+                self.weights, self.env.action_feature_vector(actions[t], states[:, t]))
+            self.weights = np.add(self.weights, self.learning_rate * q_error
+                                  * self.env.action_feature_vector(actions[t], states[:, t]))
         self.episode_count += 1
 
 

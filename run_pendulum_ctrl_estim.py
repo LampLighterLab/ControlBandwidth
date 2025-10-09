@@ -11,7 +11,7 @@ from control_method import QLearning, ReinforceSoftmax, QLearningPendulum
 # 0 < control_timestep <= sim_timestep
 def initialize_env_and_solver(sim_timestep, control_timestep):
     params = {"mass": 1, "length": 1, "gravity": 1, "damping": 0.05}
-    initial_state = np.array([np.pi, 0.1])
+    initial_state = np.array([np.pi + 0.1, 0])
     env = InvertedPendulum(
         params=params,
         initial_state=initial_state,
@@ -21,10 +21,10 @@ def initialize_env_and_solver(sim_timestep, control_timestep):
     solver = QLearningPendulum(
         env,
         initial_state=initial_state,
-        epsilon=0,
+        epsilon=0.2,
         discount_factor=0.9,
-        learning_rate=1e-8,
-        max_timestep=10,
+        learning_rate=1e-3,
+        max_timestep=100,
     )
     return solver
 
@@ -36,6 +36,7 @@ def get_approx_weights(solver, num_episodes):
     print("Running Q-Learning value function approximation")
     for i in range(n := num_episodes):
         prev_weight_vector = solver.weights
+        solver.initial_state = np.array([np.pi + 0.1 * np.random.random(), 0])
         solver.run_episode()
         weight_update_size = np.linalg.norm(
             np.subtract(solver.weights, prev_weight_vector)
@@ -67,7 +68,7 @@ def get_true_value_func_samples(solver, res, pos_min, pos_max, vel_min, vel_max)
             state_traj[:, 0] = np.array([pos_space[pos_i], vel_space[vel_i]])
             rewards = np.zeros(int(solver.max_timestep // env.control_timestep))
             for t in range(int(solver.max_timestep // env.control_timestep)):
-                next_action = solver.get_next_action(state_traj[:, t])
+                next_action = solver.get_epsilon_greedy_action(state_traj[:, t], epsilon=0)
                 state_traj[:, t + 1] = env.get_next_state(next_action, state_traj[:, t])
                 rewards[t] = env.get_state_reward(state_traj[:, t])
             state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
@@ -136,7 +137,7 @@ def compare_value_funcs(approx_weights, true_weights, solver):
 
 
 # Plot both approx and true value function
-def plot_value_funcs(solver, approx_weights, true_value_samples):
+def plot_value_funcs(solver, approx_weights, true_value_samples, res):
     fig, axs = plt.subplots(1, 2)
 
     initial_state = solver.initial_state
@@ -152,7 +153,6 @@ def plot_value_funcs(solver, approx_weights, true_value_samples):
     x_max = 2 * np.pi
     y_min = -1
     y_max = 1
-    res = 20  # Resolution of state-space to sample
 
     img = axs[0].imshow(
         true_value_samples, origin="lower", extent=[x_min, x_max, y_min, y_max], aspect="auto"
@@ -199,7 +199,7 @@ def plot_value_funcs(solver, approx_weights, true_value_samples):
     for i in range(int(sim_time // sim_timestep)):
         # set first argument to 0 to test without control
         next_state = env.get_next_state(
-            solver.get_next_action(solver.state), state_traj[:, i]
+            solver.get_epsilon_greedy_action(solver.state, epsilon=0), state_traj[:, i]
         )
         state_traj[:, i + 1] = next_state
         solver.state = next_state
@@ -219,19 +219,8 @@ def plot_value_funcs(solver, approx_weights, true_value_samples):
 
 
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
-approx_weights = get_approx_weights(solver, num_episodes=10)
+approx_weights = get_approx_weights(solver, num_episodes=100)
 true_weights = get_true_value_func_samples(
-    solver=solver, res=20, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
+    solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
 )
-# print(compare_value_funcs(approx_weights, true_weights, solver))
-plot_value_funcs(solver, approx_weights, true_weights)
-
-
-"""
-solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
-true_weights = get_true_value_func_samples(
-    solver=solver, res=20, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
-)
-plt.imshow(true_weights, origin="lower")
-plt.show()
-"""
+plot_value_funcs(solver, approx_weights, true_weights, res=10)

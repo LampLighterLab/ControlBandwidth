@@ -59,6 +59,7 @@ class InvertedPendulum:
         return -1 * np.cos(s[0]) - 3 * abs(s[1])
 
     # The action is the applied torque
+    # ! stop using this because it computes next_state unnecessarily
     def get_action_reward(self, a, s):
         next_state = self.get_next_state(a, s)
         return self.get_state_reward(next_state)
