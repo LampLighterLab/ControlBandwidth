@@ -1,10 +1,21 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import time
-from value_estimator import MonteCarloDiscrete, TDLambdaDiscrete, MonteCarloContinuous
 from inverted_pendulum import InvertedPendulum
-from environment import Actions, Gridworld
-from control_method import QLearning, ReinforceSoftmax, QLearningPendulum
+from control_method import QLearningPendulum
+
+
+# Helper function
+# Returns a 2D nparray with (0,0) at lower right, sampling the function `func`
+# within bounds with resolution `res`
+def sample(func, res, x_min, x_max, y_min, y_max, dtype=np.float64):
+    x_range = np.linspace(x_min, x_max, res)
+    y_range = np.linspace(y_min, y_max, res)
+    samples = np.zeros((res, res), dtype=dtype)
+    for x_i in range(res):
+        for y_i in range(res):
+            samples[y_i, x_i] = func(x_range[x_i], y_range[y_i])
+    return samples
 
 
 # Create pendulum environment and instance of QLearningPendulum
@@ -53,39 +64,37 @@ def get_approx_weights(solver, num_episodes):
 # Return res x res matrix (representing true value function) running sample episodes to sample true value function
 def get_true_value_func_samples(solver, res, pos_min, pos_max, vel_min, vel_max):
     env = solver.env
-    pos_space = np.linspace(pos_min, pos_max, res)
-    vel_space = np.linspace(vel_min, vel_max, res)
     true_samples = np.zeros((res, res))
 
-    for pos_i in range(res):
-        for vel_i in range(res):
-            state_traj = np.zeros(
-                (
-                    solver.initial_state.size,
-                    int(solver.max_timestep // env.control_timestep) + 1,
-                )
+    def get_return(pos, vel):
+        state_traj = np.zeros(
+            (
+                solver.initial_state.size,
+                int(solver.max_timestep // env.control_timestep) + 1,
             )
-            state_traj[:, 0] = np.array([pos_space[pos_i], vel_space[vel_i]])
-            rewards = np.zeros(int(solver.max_timestep // env.control_timestep))
-            for t in range(int(solver.max_timestep // env.control_timestep)):
-                next_action = solver.get_epsilon_greedy_action(
-                    state_traj[:, t], epsilon=0
-                )
-                state_traj[:, t + 1] = env.get_next_state(next_action, state_traj[:, t])
-                rewards[t] = env.get_state_reward(state_traj[:, t])
-            state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
+        )
+        state_traj[:, 0] = np.array([pos, vel])
+        rewards = np.zeros(int(solver.max_timestep // env.control_timestep))
+        for t in range(int(solver.max_timestep // env.control_timestep)):
+            next_action = solver.get_epsilon_greedy_action(state_traj[:, t], epsilon=0)
+            state_traj[:, t + 1] = env.get_next_state(next_action, state_traj[:, t])
+            rewards[t] = env.get_state_reward(state_traj[:, t])
+        state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
 
-            return_i = rewards[-1]
-            for i in range(rewards.shape[0] - 1):
-                return_i *= solver.discount_factor
-                return_i += rewards[rewards.shape[0] - i - 1]
-            true_samples[vel_i, pos_i] = (
-                return_i  # Note: this is so `pos` is on x-axis and `vel` on y-axis
-            )
+        return_i = rewards[-1]
+        for i in range(rewards.shape[0] - 1):
+            return_i *= solver.discount_factor
+            return_i += rewards[rewards.shape[0] - i - 1]
+        return return_i
+
+    true_samples = sample(
+        get_return, res=res, x_min=pos_min, x_max=pos_max, y_min=vel_min, y_max=vel_max
+    )
 
     return true_samples
 
 
+# ! rewrite
 # Normalize both approximation and true value function, and plot them and generate statistics (TBD)
 def compare_value_funcs(approx_weights, true_value_samples, solver):
     # `approx_weights` and `true_weights` are weights of the action-value func approximation
@@ -171,23 +180,23 @@ def plot_value_funcs(solver, approx_weights, true_value_samples, res):
     solver.weights = approx_weights
 
     max_torque = env.params["mass"] * env.params["gravity"] * env.params["length"]
-    X = np.linspace(x_min, x_max, res)  # State-action-space coordinates
-    Y = np.linspace(y_min, y_max, res)
-    max_q_vals = np.zeros((res, res))
-    max_q_actions = np.zeros((res, res))
-    T = np.linspace(-1 * max_torque, max_torque, 11)
-    arr_x = 0  # Array coordinates
-    arr_y = 0
-    for x in X:
-        for y in Y:
-            sample_qs_at_x_y = np.zeros(T.size)
-            for i in range(T.size):
-                sample_qs_at_x_y = solver.action_value_approx(T[i], (x, y))
-            max_q_vals[arr_y, arr_x] = np.max(sample_qs_at_x_y)
-            max_q_actions[arr_y, arr_x] = np.argmax(sample_qs_at_x_y)
-            arr_y += 1
-        arr_y = 0
-        arr_x += 1
+    torque_res = 11
+    torques = np.linspace(-1 * max_torque, max_torque, torque_res)
+
+    def find_max_q_vals_actions(pos, vel):
+        sample_qs_at_x_y = np.zeros(torque_res)
+        for i in range(torque_res):
+            sample_qs_at_x_y[i] = solver.action_value_approx(torques[i], (pos, vel))
+        return np.max(sample_qs_at_x_y)
+
+    max_q_vals = sample(
+        func=find_max_q_vals_actions,
+        res=res,
+        x_min=x_min,
+        x_max=x_max,
+        y_min=y_min,
+        y_max=y_max,
+    )
 
     img = axs[1].imshow(max_q_vals, origin="lower", extent=[x_min, x_max, y_min, y_max])
     axs[1].set_title("Approximated value function\n(Maximum Q-value for each state)")
@@ -196,6 +205,7 @@ def plot_value_funcs(solver, approx_weights, true_value_samples, res):
     axs[1].set_xlabel("pos")
     axs[1].set_ylabel("vel")
 
+    # Sample trajectory
     sim_time = solver.max_timestep
     sim_timestep = solver.env.sim_timestep
     state_traj = np.zeros((initial_state.size, int(sim_time // sim_timestep) + 1))
@@ -212,7 +222,10 @@ def plot_value_funcs(solver, approx_weights, true_value_samples, res):
 
     plt.figure(2)
     plt.scatter(
-        state_traj[0, :], state_traj[1, :], c=range(int(sim_time // sim_timestep) + 1)
+        state_traj[0, :],
+        state_traj[1, :],
+        c=range(int(sim_time // sim_timestep) + 1),
+        cmap="cool",
     )
     plt.title("State space")
     plt.colorbar(label="Timestep")
@@ -223,8 +236,8 @@ def plot_value_funcs(solver, approx_weights, true_value_samples, res):
 
 
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
-approx_weights = get_approx_weights(solver, num_episodes=100)
+approx_weights = get_approx_weights(solver, num_episodes=5)
 true_value_samples = get_true_value_func_samples(
-    solver=solver, res=20, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
+    solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
 )
-plot_value_funcs(solver, approx_weights, true_value_samples, res=20)
+plot_value_funcs(solver, approx_weights, true_value_samples, res=10)
