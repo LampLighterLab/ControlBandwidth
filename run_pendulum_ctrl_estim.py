@@ -52,7 +52,10 @@ def run_q_learning(solver, num_episodes):
         solver.learning_rate *= 0.9
         prev_weight_vector = solver.weights
         # Random initial state [pi-0.5 < pos < pi+0.5, -0.5 < vel < 0.5]
-        random_initial_state = [np.pi + 0.5 * np.random.random(), 0.5 * np.random.random()]
+        random_initial_state = [
+            np.pi + 0.5 * np.random.random(),
+            0.5 * np.random.random(),
+        ]
         solver.initial_state = np.array(random_initial_state)
         episode_states = solver.run_episode()
         states = np.append(states, episode_states, axis=1)
@@ -239,9 +242,15 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
     plt.xlabel("pos")
     plt.ylabel("vel")
 
-    #2d histogram of states visited during q-learning
+    # 2d histogram of states visited during q-learning
     plt.figure(3)
-    plt.hist2d(x=states[0, :], y=states[1, :], bins=40, range=[[0, 2 * np.pi], [-4, 4]], cmap="Blues")
+    plt.hist2d(
+        x=states[0, :],
+        y=states[1, :],
+        bins=40,
+        range=[[0, 2 * np.pi], [-4, 4]],
+        cmap="Blues",
+    )
     plt.title("States visited during Q-Learning")
     plt.colorbar(label="Frequency")
     plt.xlabel("pos")
@@ -249,18 +258,19 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
 
     plt.show()
 
+
 # Compute least-squares solution of feature vector weights for testing
 # Monte-Carlo Least Squares algorithm from David Silver's lecture 6
 # Takes in a grid of samples of the value function
 # Returns the weights of the least squares value appproximation
 # ? how to convert between state- and action-feature vector
-'''
+"""
 def least_squares_fit(true_value_samples, feature_vec, res, x_min, x_max, y_min, y_max):
     feature_vec_length = feature_vec(np.array([0, 0])).size
     x_range = 
     for x_i in range(res):
         for y_i in range(res):
-'''
+"""
 
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
 approx_weights, states = run_q_learning(solver, num_episodes=50)
