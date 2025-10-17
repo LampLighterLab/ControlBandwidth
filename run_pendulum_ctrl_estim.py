@@ -45,10 +45,13 @@ def initialize_env_and_solver(sim_timestep, control_timestep):
 def get_approx_weights(solver, num_episodes):
     start = time.time_ns()
     print("Running Q-Learning value function approximation")
-    for i in range(n := num_episodes):
+    n = num_episodes
+    states = np.zeros((2, 0))
+    for i in range(n):
         prev_weight_vector = solver.weights
         solver.initial_state = np.array([np.pi + 0.1 * np.random.random(), 0])
-        solver.run_episode()
+        episode_states = solver.run_episode()
+        states = np.append(states, episode_states, axis=1)
         weight_update_size = np.linalg.norm(
             np.subtract(solver.weights, prev_weight_vector)
         )
@@ -58,7 +61,8 @@ def get_approx_weights(solver, num_episodes):
     end = time.time_ns()
     print(f"Elapsed: {(end - start) / 1e6:.3f} ms")
     print(f"Averaged {((end - start) / n) / 1e6:.3f} ms per episode")
-    return solver.weights
+    states[0, :] = np.mod(states[0, :], 2 * np.pi)
+    return solver.weights, states
 
 
 # Return res x res matrix (representing true value function) running sample episodes to sample true value function
@@ -147,8 +151,7 @@ def compare_value_funcs(approx_weights, true_value_samples, solver):
     return np.linalg.norm(approx_q_samples - true_q_samples)
 
 
-# Plot both approx and true value function
-def plot_value_funcs(solver, approx_weights, true_value_samples, res):
+def create_plots(solver, approx_weights, true_value_samples, res, states):
     fig, axs = plt.subplots(1, 2)
 
     initial_state = solver.initial_state
@@ -232,6 +235,13 @@ def plot_value_funcs(solver, approx_weights, true_value_samples, res):
     plt.xlabel("pos")
     plt.ylabel("vel")
 
+    #2d histogram of states visited during q-learning
+    plt.figure(3)
+    plt.hist2d(x=states[0, :], y=states[1, :], bins=20, range=[[0, 2 * np.pi], [-4, 4]], cmap="Reds")
+    plt.colorbar(label="Frequency")
+    plt.xlabel("pos")
+    plt.ylabel("vel")
+
     plt.show()
 
 # Compute least-squares solution of feature vector weights for testing
@@ -248,8 +258,8 @@ def least_squares_fit(true_value_samples, feature_vec, res, x_min, x_max, y_min,
 '''
 
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
-approx_weights = get_approx_weights(solver, num_episodes=5)
+approx_weights, states = get_approx_weights(solver, num_episodes=5)
 true_value_samples = get_true_value_func_samples(
     solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
 )
-plot_value_funcs(solver, approx_weights, true_value_samples, res=10)
+create_plots(solver, approx_weights, true_value_samples, res=10, states=states)

@@ -188,6 +188,7 @@ class QLearningPendulum:
                 * self.env.action_feature_vector(actions[i], states[i]),
             )
 
+    # Return list of states
     def run_episode(self):
         self.state = self.initial_state.copy()
 
@@ -227,6 +228,7 @@ class QLearningPendulum:
                 * self.env.action_feature_vector(actions[t], states[:, t]),
             )
         self.episode_count += 1
+        return states
 
 
 class ReinforceSoftmax:
