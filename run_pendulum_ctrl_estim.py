@@ -42,14 +42,18 @@ def initialize_env_and_solver(sim_timestep, control_timestep):
 
 # Run episodes of Q-learning control method, return weights of state-value-function approximation
 # num_episodes > 0
-def get_approx_weights(solver, num_episodes):
+def run_q_learning(solver, num_episodes):
     start = time.time_ns()
     print("Running Q-Learning value function approximation")
     n = num_episodes
     states = np.zeros((2, 0))
     for i in range(n):
+        # Decaying exponential learning rate
+        solver.learning_rate *= 0.9
         prev_weight_vector = solver.weights
-        solver.initial_state = np.array([np.pi + 0.1 * np.random.random(), 0])
+        # Random initial state [pi-0.5 < pos < pi+0.5, -0.5 < vel < 0.5]
+        random_initial_state = [np.pi + 0.5 * np.random.random(), 0.5 * np.random.random()]
+        solver.initial_state = np.array(random_initial_state)
         episode_states = solver.run_episode()
         states = np.append(states, episode_states, axis=1)
         weight_update_size = np.linalg.norm(
@@ -237,7 +241,8 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
 
     #2d histogram of states visited during q-learning
     plt.figure(3)
-    plt.hist2d(x=states[0, :], y=states[1, :], bins=20, range=[[0, 2 * np.pi], [-4, 4]], cmap="Reds")
+    plt.hist2d(x=states[0, :], y=states[1, :], bins=40, range=[[0, 2 * np.pi], [-4, 4]], cmap="Blues")
+    plt.title("States visited during Q-Learning")
     plt.colorbar(label="Frequency")
     plt.xlabel("pos")
     plt.ylabel("vel")
@@ -258,7 +263,7 @@ def least_squares_fit(true_value_samples, feature_vec, res, x_min, x_max, y_min,
 '''
 
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
-approx_weights, states = get_approx_weights(solver, num_episodes=5)
+approx_weights, states = run_q_learning(solver, num_episodes=50)
 true_value_samples = get_true_value_func_samples(
     solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
 )
