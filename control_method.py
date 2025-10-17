@@ -202,7 +202,7 @@ class QLearningPendulum:
                 states[:, t], epsilon=self.epsilon
             )
             states[:, t + 1] = self.env.get_next_state(actions[t], states[:, t])
-            rewards[t] = self.env.get_state_reward(states[:, t + 1])
+            rewards[t] = self.env.get_reward(actions[t], states[:, t + 1])
             # Update weights: Q(s,a) <- alpha*(R(s,a) + gamma*max(Q(s',a')) - Q(s,a))
             # Get max Q(s',a') using Q-value approx
             max_q_next_action = np.dot(

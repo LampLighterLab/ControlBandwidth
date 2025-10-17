@@ -78,7 +78,7 @@ def get_true_value_func_samples(solver, res, pos_min, pos_max, vel_min, vel_max)
         for t in range(int(solver.max_timestep // env.control_timestep)):
             next_action = solver.get_epsilon_greedy_action(state_traj[:, t], epsilon=0)
             state_traj[:, t + 1] = env.get_next_state(next_action, state_traj[:, t])
-            rewards[t] = env.get_state_reward(state_traj[:, t])
+            rewards[t] = env.get_reward(next_action, state_traj[:, t])
         state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
 
         return_i = rewards[-1]
