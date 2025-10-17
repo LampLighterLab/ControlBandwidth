@@ -6,7 +6,7 @@ from control_method import QLearningPendulum
 
 
 # Helper function
-# Returns a 2D nparray with (0,0) at lower right, sampling the function `func`
+# Returns a 2D nparray sampling the function `func` with arr[y, x] = func(x, y) (for plotting purposes)
 # within bounds with resolution `res`
 def sample(func, res, x_min, x_max, y_min, y_max, dtype=np.float64):
     x_range = np.linspace(x_min, x_max, res)
@@ -234,6 +234,18 @@ def plot_value_funcs(solver, approx_weights, true_value_samples, res):
 
     plt.show()
 
+# Compute least-squares solution of feature vector weights for testing
+# Monte-Carlo Least Squares algorithm from David Silver's lecture 6
+# Takes in a grid of samples of the value function
+# Returns the weights of the least squares value appproximation
+# ? how to convert between state- and action-feature vector
+'''
+def least_squares_fit(true_value_samples, feature_vec, res, x_min, x_max, y_min, y_max):
+    feature_vec_length = feature_vec(np.array([0, 0])).size
+    x_range = 
+    for x_i in range(res):
+        for y_i in range(res):
+'''
 
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
 approx_weights = get_approx_weights(solver, num_episodes=5)
