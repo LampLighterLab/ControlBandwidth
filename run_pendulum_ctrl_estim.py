@@ -34,7 +34,7 @@ def initialize_env_and_solver(sim_timestep, control_timestep):
         initial_state=initial_state,
         epsilon=0.2,
         discount_factor=0.9,
-        learning_rate=1e-3,
+        learning_rate=1e-2,
         max_timestep=100,
     )
     return solver
@@ -48,6 +48,7 @@ def run_q_learning(solver, num_episodes):
     n = num_episodes
     states = np.zeros((2, 0))
     for i in range(n):
+        print(solver.weights)
         # Decaying exponential learning rate
         solver.learning_rate *= 0.9
         prev_weight_vector = solver.weights
@@ -219,13 +220,13 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
     sim_time = solver.max_timestep
     sim_timestep = solver.env.sim_timestep
     state_traj = np.zeros((initial_state.size, int(sim_time // sim_timestep) + 1))
+    action_traj = np.zeros(int(sim_time // sim_timestep) + 1)
     state_traj[:, 0] = initial_state
     solver.state = solver.initial_state
     for i in range(int(sim_time // sim_timestep)):
+        action_traj[i] = solver.get_epsilon_greedy_action(solver.state, epsilon=0)
         # set first argument to 0 to test without control
-        next_state = env.get_next_state(
-            solver.get_epsilon_greedy_action(solver.state, epsilon=0), state_traj[:, i]
-        )
+        next_state = env.get_next_state(action_traj[i], state_traj[:, i])
         state_traj[:, i + 1] = next_state
         solver.state = next_state
     state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
@@ -237,7 +238,7 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
         c=range(int(sim_time // sim_timestep) + 1),
         cmap="cool",
     )
-    plt.title("State space")
+    plt.title("Sample trajectory")
     plt.colorbar(label="Timestep")
     plt.xlabel("pos")
     plt.ylabel("vel")
@@ -255,6 +256,17 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
     plt.colorbar(label="Frequency")
     plt.xlabel("pos")
     plt.ylabel("vel")
+
+    # Plot rewards recieved during sample trajectory
+    plt.figure(4)
+    rewards = np.zeros(int(sim_time // sim_timestep) + 1)
+    timesteps = np.linspace(0, 1, rewards.size)
+    for i in range(rewards.size):
+        rewards[i] = solver.env.get_reward(action_traj[i], state_traj[:, i])
+    plt.plot(timesteps, rewards)
+    plt.title("Rewards during sample trajectory")
+    plt.xlabel("timestep")
+    plt.ylabel("reward")
 
     plt.show()
 
