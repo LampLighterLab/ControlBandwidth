@@ -4,7 +4,13 @@ import time
 from inverted_pendulum import InvertedPendulum
 from control_method import QLearningPendulum
 from animation import get_animation
-from util import sample, sample_trajectory, initialize_env_and_solver, get_plot_least_squares
+from util import (
+    sample,
+    sample_trajectory,
+    initialize_env_and_solver,
+    get_plot_least_squares,
+)
+
 
 # Run episodes of Q-learning control method, return weights of state-value-function approximation
 # num_episodes > 0
@@ -227,15 +233,16 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
 
     plt.show()
 
+
 # Run Q learning and compare with ground truth value function
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
-approx_weights, states = run_q_learning(solver, num_episodes=100)
-'''
+approx_weights, states = run_q_learning(solver, num_episodes=10)
+"""
 true_value_samples = get_true_value_func_samples(
     solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
 )
 create_plots(solver, approx_weights, true_value_samples, res=10, states=states)
-'''
+"""
 
 # Find least squares fit to action-feature vector
-get_plot_least_squares(solver=solver, x_min=0, x_max=2*np.pi, y_min=-2, y_max=2)
+get_plot_least_squares(solver=solver, x_min=0, x_max=2 * np.pi, y_min=-2, y_max=2)

@@ -3,6 +3,7 @@ import numpy as np
 from control_method import QLearningPendulum
 from inverted_pendulum import InvertedPendulum
 
+
 # Create pendulum environment and instance of QLearningPendulum
 # 0 < control_timestep <= sim_timestep
 def initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1):
@@ -23,6 +24,7 @@ def initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1):
         max_timestep=50,
     )
     return solver
+
 
 # Helper function
 # Returns a 2D nparray sampling the function `func` with arr[y, x] = func(x, y) (for plotting purposes)
@@ -65,7 +67,7 @@ def least_squares_fit(solver, res, x_min, x_max, y_min, y_max, t_min, t_max):
     # `solver` and `env` just used for computing dot product of
     # action-feature vector and weights
     env = solver.env
-    t_res = 5
+    t_res = 11
     pos_range = np.linspace(x_min, x_max, res)
     vel_range = np.linspace(y_min, y_max, res)
     torque_range = np.linspace(t_min, t_max, t_res)
@@ -135,12 +137,16 @@ def least_squares_fit(solver, res, x_min, x_max, y_min, y_max, t_min, t_max):
     )
     return least_squares_weights
 
+
 # Returns (res x res) matrix representing max Q value using `weights` for Q-value approximation
 # [vel, pos]
-def sample_action_feature_vec(weights, res, t_res, x_min, x_max, y_min, y_max, t_min, t_max):
+def sample_action_feature_vec(
+    weights, res, t_res, x_min, x_max, y_min, y_max, t_min, t_max
+):
     solver = initialize_env_and_solver()
     solver.weights = weights
     torques = np.linspace(t_min, t_max, t_res)
+
     def find_max_q_vals_actions(pos, vel):
         sample_qs_at_x_y = np.zeros(t_res)
         for i in range(t_res):
@@ -157,6 +163,7 @@ def sample_action_feature_vec(weights, res, t_res, x_min, x_max, y_min, y_max, t
     )
     return max_q_vals
 
+
 def get_plot_least_squares(solver, x_min, x_max, y_min, y_max):
     ls_weights = least_squares_fit(
         solver=solver,
@@ -168,9 +175,23 @@ def get_plot_least_squares(solver, x_min, x_max, y_min, y_max):
         t_min=-0.5,
         t_max=0.5,
     )
-    ls_q_vals = sample_action_feature_vec(weights=ls_weights, res=20, t_res=11,
-                                        x_min=0, x_max=2*np.pi, y_min=-2, y_max=2, t_min=-0.5, t_max=0.5)
-    plt.imshow(ls_q_vals, origin="lower", extent=[x_min, x_max, y_min, y_max], aspect=((x_max - x_min) / (y_max - y_min)))
+    ls_q_vals = sample_action_feature_vec(
+        weights=ls_weights,
+        res=20,
+        t_res=11,
+        x_min=0,
+        x_max=2 * np.pi,
+        y_min=-2,
+        y_max=2,
+        t_min=-0.5,
+        t_max=0.5,
+    )
+    plt.imshow(
+        ls_q_vals,
+        origin="lower",
+        extent=[x_min, x_max, y_min, y_max],
+        aspect=((x_max - x_min) / (y_max - y_min)),
+    )
     plt.title("Least squares fit action-value function")
     plt.colorbar(label="Action value")
     plt.xlabel("pos")
