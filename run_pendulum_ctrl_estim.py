@@ -4,30 +4,7 @@ import time
 from inverted_pendulum import InvertedPendulum
 from control_method import QLearningPendulum
 from animation import get_animation
-from util import sample, sample_trajectory, least_squares_fit
-
-
-# Create pendulum environment and instance of QLearningPendulum
-# 0 < control_timestep <= sim_timestep
-def initialize_env_and_solver(sim_timestep, control_timestep):
-    params = {"mass": 1, "length": 1, "gravity": 1, "damping": 0.01}
-    initial_state = np.array([np.pi + 0.1, 0])
-    env = InvertedPendulum(
-        params=params,
-        initial_state=initial_state,
-        sim_timestep=sim_timestep,
-        control_timestep=control_timestep,
-    )
-    solver = QLearningPendulum(
-        env,
-        initial_state=initial_state,
-        epsilon=0.2,
-        discount_factor=0.9,
-        learning_rate=1e-2,
-        max_timestep=50,
-    )
-    return solver
-
+from util import sample, sample_trajectory, initialize_env_and_solver, get_plot_least_squares
 
 # Run episodes of Q-learning control method, return weights of state-value-function approximation
 # num_episodes > 0
@@ -250,21 +227,15 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
 
     plt.show()
 
-
+# Run Q learning and compare with ground truth value function
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
-approx_weights, states = run_q_learning(solver, num_episodes=1)
+approx_weights, states = run_q_learning(solver, num_episodes=100)
+'''
 true_value_samples = get_true_value_func_samples(
     solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
 )
 create_plots(solver, approx_weights, true_value_samples, res=10, states=states)
-m = least_squares_fit(
-    solver=solver,
-    res=2,
-    x_min=0,
-    x_max=2 * np.pi,
-    y_min=-1,
-    y_max=1,
-    t_min=-0.5,
-    t_max=0.5,
-)
-print(m)
+'''
+
+# Find least squares fit to action-feature vector
+get_plot_least_squares(solver=solver, x_min=0, x_max=2*np.pi, y_min=-2, y_max=2)

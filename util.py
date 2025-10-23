@@ -1,6 +1,28 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from control_method import QLearningPendulum
+from inverted_pendulum import InvertedPendulum
 
+# Create pendulum environment and instance of QLearningPendulum
+# 0 < control_timestep <= sim_timestep
+def initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1):
+    params = {"mass": 1, "length": 1, "gravity": 1, "damping": 0.01}
+    initial_state = np.array([np.pi + 0.1, 0])
+    env = InvertedPendulum(
+        params=params,
+        initial_state=initial_state,
+        sim_timestep=sim_timestep,
+        control_timestep=control_timestep,
+    )
+    solver = QLearningPendulum(
+        env,
+        initial_state=initial_state,
+        epsilon=0.2,
+        discount_factor=0.9,
+        learning_rate=1e-2,
+        max_timestep=50,
+    )
+    return solver
 
 # Helper function
 # Returns a 2D nparray sampling the function `func` with arr[y, x] = func(x, y) (for plotting purposes)
@@ -37,9 +59,11 @@ def sample_trajectory(solver):
 
 
 # Compute least-squares solution of feature vector weights for testing
-# Samples ground truth over state-action-space in a res x res x t_res grid
+# Samples ground truth over state-action-space in a (res x res x t_res) grid
 # pos on [x_min, x_max], vel on [y_min, y_max], torque on [t_min, t_max]
 def least_squares_fit(solver, res, x_min, x_max, y_min, y_max, t_min, t_max):
+    # `solver` and `env` just used for computing dot product of
+    # action-feature vector and weights
     env = solver.env
     t_res = 5
     pos_range = np.linspace(x_min, x_max, res)
@@ -106,7 +130,49 @@ def least_squares_fit(solver, res, x_min, x_max, y_min, y_max, t_min, t_max):
 
     X = X.reshape((-1, feature_vec_len))
     Y = sample_q_matrix.reshape(-1)
-    feature_vec_coeffs = (
+    least_squares_weights = (
         np.linalg.inv((X.T @ X) + 1e-10 * np.identity(feature_vec_len)) @ X.T @ Y
     )
-    return feature_vec_coeffs
+    return least_squares_weights
+
+# Returns (res x res) matrix representing max Q value using `weights` for Q-value approximation
+# [vel, pos]
+def sample_action_feature_vec(weights, res, t_res, x_min, x_max, y_min, y_max, t_min, t_max):
+    solver = initialize_env_and_solver()
+    solver.weights = weights
+    torques = np.linspace(t_min, t_max, t_res)
+    def find_max_q_vals_actions(pos, vel):
+        sample_qs_at_x_y = np.zeros(t_res)
+        for i in range(t_res):
+            sample_qs_at_x_y[i] = solver.action_value_approx(torques[i], (pos, vel))
+        return np.max(sample_qs_at_x_y)
+
+    max_q_vals = sample(
+        func=find_max_q_vals_actions,
+        res=res,
+        x_min=x_min,
+        x_max=x_max,
+        y_min=y_min,
+        y_max=y_max,
+    )
+    return max_q_vals
+
+def get_plot_least_squares(solver, x_min, x_max, y_min, y_max):
+    ls_weights = least_squares_fit(
+        solver=solver,
+        res=2,
+        x_min=0,
+        x_max=2 * np.pi,
+        y_min=-1,
+        y_max=1,
+        t_min=-0.5,
+        t_max=0.5,
+    )
+    ls_q_vals = sample_action_feature_vec(weights=ls_weights, res=20, t_res=11,
+                                        x_min=0, x_max=2*np.pi, y_min=-2, y_max=2, t_min=-0.5, t_max=0.5)
+    plt.imshow(ls_q_vals, origin="lower", extent=[x_min, x_max, y_min, y_max], aspect=((x_max - x_min) / (y_max - y_min)))
+    plt.title("Least squares fit action-value function")
+    plt.colorbar(label="Action value")
+    plt.xlabel("pos")
+    plt.ylabel("vel")
+    plt.show()
