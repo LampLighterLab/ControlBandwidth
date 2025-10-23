@@ -3,6 +3,7 @@ import numpy as np
 import time
 from inverted_pendulum import InvertedPendulum
 from control_method import QLearningPendulum
+from animation import get_animation
 
 
 # Helper function
@@ -16,6 +17,26 @@ def sample(func, res, x_min, x_max, y_min, y_max, dtype=np.float64):
         for y_i in range(res):
             samples[y_i, x_i] = func(x_range[x_i], y_range[y_i])
     return samples
+
+# Generate a sample trajectory using `solver`, return state array, action array
+# state_traj[0, i] is position at timestep i, state_traj[1, i] is velocity at timestep i
+# action_traj[i] is action taken at timestep i
+def sample_trajectory(solver):
+    env = solver.env
+    initial_state = solver.initial_state
+    num_timesteps = int(solver.max_timestep // solver.env.sim_timestep)
+    state_traj = np.zeros((initial_state.size, num_timesteps + 1))
+    action_traj = np.zeros(num_timesteps + 1)
+    state_traj[:, 0] = initial_state
+    solver.state = solver.initial_state
+    for i in range(num_timesteps):
+        action_traj[i] = solver.get_epsilon_greedy_action(solver.state, epsilon=0)
+        # set first argument to 0 to test without control
+        next_state = env.get_next_state(action_traj[i], state_traj[:, i])
+        state_traj[:, i + 1] = next_state
+        solver.state = next_state
+    state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
+    return state_traj, action_traj
 
 
 # Create pendulum environment and instance of QLearningPendulum
@@ -216,26 +237,14 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
     axs[1].set_xlabel("pos")
     axs[1].set_ylabel("vel")
 
-    # Sample trajectory
-    sim_time = solver.max_timestep
-    sim_timestep = solver.env.sim_timestep
-    state_traj = np.zeros((initial_state.size, int(sim_time // sim_timestep) + 1))
-    action_traj = np.zeros(int(sim_time // sim_timestep) + 1)
-    state_traj[:, 0] = initial_state
-    solver.state = solver.initial_state
-    for i in range(int(sim_time // sim_timestep)):
-        action_traj[i] = solver.get_epsilon_greedy_action(solver.state, epsilon=0)
-        # set first argument to 0 to test without control
-        next_state = env.get_next_state(action_traj[i], state_traj[:, i])
-        state_traj[:, i + 1] = next_state
-        solver.state = next_state
-    state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
+    state_traj, action_traj = sample_trajectory(solver=solver)
+    num_timesteps = int(solver.max_timestep // solver.env.sim_timestep)
 
     plt.figure(2)
     plt.scatter(
         state_traj[0, :],
         state_traj[1, :],
-        c=range(int(sim_time // sim_timestep) + 1),
+        c=range(num_timesteps + 1),
         cmap="cool",
     )
     plt.title("Sample trajectory")
@@ -259,14 +268,17 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
 
     # Plot rewards recieved during sample trajectory
     plt.figure(4)
-    rewards = np.zeros(int(sim_time // sim_timestep) + 1)
+    rewards = np.zeros(num_timesteps + 1)
     timesteps = np.linspace(0, 1, rewards.size)
     for i in range(rewards.size):
         rewards[i] = solver.env.get_reward(action_traj[i], state_traj[:, i])
-    plt.plot(timesteps, rewards)
+    plt.scatter(timesteps, rewards)
     plt.title("Rewards during sample trajectory")
     plt.xlabel("timestep")
     plt.ylabel("reward")
+    
+    # Get sample trajectory animation
+    get_animation(states=state_traj, filename="sample_traj.mp4")
 
     plt.show()
 
