@@ -4,39 +4,7 @@ import time
 from inverted_pendulum import InvertedPendulum
 from control_method import QLearningPendulum
 from animation import get_animation
-
-
-# Helper function
-# Returns a 2D nparray sampling the function `func` with arr[y, x] = func(x, y) (for plotting purposes)
-# within bounds with resolution `res`
-def sample(func, res, x_min, x_max, y_min, y_max, dtype=np.float64):
-    x_range = np.linspace(x_min, x_max, res)
-    y_range = np.linspace(y_min, y_max, res)
-    samples = np.zeros((res, res), dtype=dtype)
-    for x_i in range(res):
-        for y_i in range(res):
-            samples[y_i, x_i] = func(x_range[x_i], y_range[y_i])
-    return samples
-
-# Generate a sample trajectory using `solver`, return state array, action array
-# state_traj[0, i] is position at timestep i, state_traj[1, i] is velocity at timestep i
-# action_traj[i] is action taken at timestep i
-def sample_trajectory(solver):
-    env = solver.env
-    initial_state = solver.initial_state
-    num_timesteps = int(solver.max_timestep // solver.env.sim_timestep)
-    state_traj = np.zeros((initial_state.size, num_timesteps + 1))
-    action_traj = np.zeros(num_timesteps + 1)
-    state_traj[:, 0] = initial_state
-    solver.state = solver.initial_state
-    for i in range(num_timesteps):
-        action_traj[i] = solver.get_epsilon_greedy_action(solver.state, epsilon=0)
-        # set first argument to 0 to test without control
-        next_state = env.get_next_state(action_traj[i], state_traj[:, i])
-        state_traj[:, i + 1] = next_state
-        solver.state = next_state
-    state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
-    return state_traj, action_traj
+from util import sample, sample_trajectory, least_squares_fit
 
 
 # Create pendulum environment and instance of QLearningPendulum
@@ -276,29 +244,27 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
     plt.title("Rewards during sample trajectory")
     plt.xlabel("timestep")
     plt.ylabel("reward")
-    
+
     # Get sample trajectory animation
     get_animation(states=state_traj, actions=action_traj, filename="sample_traj.mp4")
 
     plt.show()
 
 
-# Compute least-squares solution of feature vector weights for testing
-# Monte-Carlo Least Squares algorithm from David Silver's lecture 6
-# Takes in a grid of samples of the value function
-# Returns the weights of the least squares value appproximation
-# ? how to convert between state- and action-feature vector
-"""
-def least_squares_fit(true_value_samples, feature_vec, res, x_min, x_max, y_min, y_max):
-    feature_vec_length = feature_vec(np.array([0, 0])).size
-    x_range = 
-    for x_i in range(res):
-        for y_i in range(res):
-"""
-
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
-approx_weights, states = run_q_learning(solver, num_episodes=100)
+approx_weights, states = run_q_learning(solver, num_episodes=1)
 true_value_samples = get_true_value_func_samples(
     solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
 )
 create_plots(solver, approx_weights, true_value_samples, res=10, states=states)
+m = least_squares_fit(
+    solver=solver,
+    res=2,
+    x_min=0,
+    x_max=2 * np.pi,
+    y_min=-1,
+    y_max=1,
+    t_min=-0.5,
+    t_max=0.5,
+)
+print(m)
