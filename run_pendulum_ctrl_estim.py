@@ -56,7 +56,7 @@ def initialize_env_and_solver(sim_timestep, control_timestep):
         epsilon=0.2,
         discount_factor=0.9,
         learning_rate=1e-2,
-        max_timestep=100,
+        max_timestep=50,
     )
     return solver
 
@@ -278,7 +278,7 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
     plt.ylabel("reward")
     
     # Get sample trajectory animation
-    get_animation(states=state_traj, filename="sample_traj.mp4")
+    get_animation(states=state_traj, actions=action_traj, filename="sample_traj.mp4")
 
     plt.show()
 
@@ -297,7 +297,7 @@ def least_squares_fit(true_value_samples, feature_vec, res, x_min, x_max, y_min,
 """
 
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
-approx_weights, states = run_q_learning(solver, num_episodes=50)
+approx_weights, states = run_q_learning(solver, num_episodes=100)
 true_value_samples = get_true_value_func_samples(
     solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
 )
