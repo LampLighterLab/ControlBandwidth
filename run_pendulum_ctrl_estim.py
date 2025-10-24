@@ -25,9 +25,9 @@ def run_q_learning(solver, num_episodes):
         # Decaying exponential learning rate
         solver.learning_rate *= 0.997
         prev_weight_vector = solver.weights
-        # Random initial state [pi-0.5 < pos < pi+0.5, -0.5 < vel < 0.5]
+        # Random initial state
         random_initial_state = [
-            2 * np.pi * np.random.random(),
+            np.pi + 0.25 * np.pi * np.random.random(),
             1 * np.random.random(),
         ]
         solver.initial_state = np.array(random_initial_state)
@@ -132,7 +132,9 @@ def compare_value_funcs(approx_weights, true_value_samples, solver):
     return np.linalg.norm(approx_q_samples - true_q_samples)
 
 
-def create_plots(solver, approx_weights, true_value_samples, res, states, x_min, x_max, y_min, y_max):
+def create_plots(
+    solver, approx_weights, true_value_samples, res, states, x_min, x_max, y_min, y_max
+):
     fig, axs = plt.subplots(1, 2)
 
     initial_state = solver.initial_state
@@ -207,7 +209,7 @@ def create_plots(solver, approx_weights, true_value_samples, res, states, x_min,
         bins=40,
         range=[[x_min, x_max], [y_min, y_max]],
         cmap="magma",
-        norm=matplotlib.colors.LogNorm()
+        norm=matplotlib.colors.LogNorm(),
     )
     plt.title("States visited during Q-Learning")
     plt.colorbar(label="Frequency")
@@ -227,10 +229,16 @@ def create_plots(solver, approx_weights, true_value_samples, res, states, x_min,
 
     # Get policy
     plt.figure(5)
+
     def policy(pos, vel):
         return solver.get_epsilon_greedy_action([pos, vel], 0)
-    policy_matrix = sample(func=policy, res=100, x_min=x_min, x_max=x_max, y_min=y_min, y_max=y_max)
-    plt.imshow(policy_matrix, origin="lower", extent=[x_min, x_max, y_min, y_max], cmap="bwr")
+
+    policy_matrix = sample(
+        func=policy, res=100, x_min=x_min, x_max=x_max, y_min=y_min, y_max=y_max
+    )
+    plt.imshow(
+        policy_matrix, origin="lower", extent=[x_min, x_max, y_min, y_max], cmap="bwr"
+    )
     plt.title("Policy")
     plt.colorbar(label="Applied torque")
     plt.xlabel("pos")
@@ -243,12 +251,22 @@ def create_plots(solver, approx_weights, true_value_samples, res, states, x_min,
 
 
 # Run Q learning and compare with ground truth value function
-solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
+solver = initialize_env_and_solver(sim_timestep=0.005, control_timestep=0.2)
 approx_weights, states = run_q_learning(solver, num_episodes=500)
 true_value_samples = get_true_value_func_samples(
     solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-2, vel_max=2
 )
-create_plots(solver, approx_weights, true_value_samples, res=10, states=states, x_min=0, x_max=2 * np.pi, y_min=-2, y_max=2)
+create_plots(
+    solver,
+    approx_weights,
+    true_value_samples,
+    res=10,
+    states=states,
+    x_min=0,
+    x_max=2 * np.pi,
+    y_min=-2,
+    y_max=2,
+)
 
 
 # Find least squares fit to action-feature vector

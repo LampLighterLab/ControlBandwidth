@@ -21,7 +21,7 @@ def initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1):
         epsilon=0.2,
         discount_factor=0.98,
         learning_rate=1e-4,
-        max_timestep=50,
+        max_timestep=30,
     )
     return solver
 
