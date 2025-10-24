@@ -19,8 +19,8 @@ def initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1):
         env,
         initial_state=initial_state,
         epsilon=0.2,
-        discount_factor=0.9,
-        learning_rate=1e-2,
+        discount_factor=0.98,
+        learning_rate=1e-4,
         max_timestep=50,
     )
     return solver
@@ -102,7 +102,7 @@ def least_squares_fit(solver, res, x_min, x_max, y_min, y_max, t_min, t_max):
             return_i += rewards[rewards.shape[0] - i - 1]
         return return_i
 
-    # Fill out sample_matrix
+    # Fill out sample_q_matrix
     for torque_i in range(t_res):
 
         def sample_q_container(pos, vel):

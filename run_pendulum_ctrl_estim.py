@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.colors
 import time
 from inverted_pendulum import InvertedPendulum
 from control_method import QLearningPendulum
@@ -22,12 +23,12 @@ def run_q_learning(solver, num_episodes):
     for i in range(n):
         print(solver.weights)
         # Decaying exponential learning rate
-        solver.learning_rate *= 0.9
+        solver.learning_rate *= 0.997
         prev_weight_vector = solver.weights
         # Random initial state [pi-0.5 < pos < pi+0.5, -0.5 < vel < 0.5]
         random_initial_state = [
-            np.pi + 0.5 * np.random.random(),
-            0.5 * np.random.random(),
+            2 * np.pi * np.random.random(),
+            1 * np.random.random(),
         ]
         solver.initial_state = np.array(random_initial_state)
         episode_states = solver.run_episode()
@@ -131,7 +132,7 @@ def compare_value_funcs(approx_weights, true_value_samples, solver):
     return np.linalg.norm(approx_q_samples - true_q_samples)
 
 
-def create_plots(solver, approx_weights, true_value_samples, res, states):
+def create_plots(solver, approx_weights, true_value_samples, res, states, x_min, x_max, y_min, y_max):
     fig, axs = plt.subplots(1, 2)
 
     initial_state = solver.initial_state
@@ -142,11 +143,6 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
         sim_timestep=solver.env.sim_timestep,
         control_timestep=solver.env.control_timestep,
     )
-
-    x_min = 0  # Limits of sampled state-space (x=pos, y=vel)
-    x_max = 2 * np.pi
-    y_min = -1
-    y_max = 1
 
     img = axs[0].imshow(
         true_value_samples,
@@ -162,7 +158,7 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
 
     solver.weights = approx_weights
 
-    max_torque = env.params["mass"] * env.params["gravity"] * env.params["length"]
+    max_torque = solver.max_torque
     torque_res = 11
     torques = np.linspace(-1 * max_torque, max_torque, torque_res)
 
@@ -209,8 +205,9 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
         x=states[0, :],
         y=states[1, :],
         bins=40,
-        range=[[0, 2 * np.pi], [-4, 4]],
-        cmap="Blues",
+        range=[[x_min, x_max], [y_min, y_max]],
+        cmap="magma",
+        norm=matplotlib.colors.LogNorm()
     )
     plt.title("States visited during Q-Learning")
     plt.colorbar(label="Frequency")
@@ -228,6 +225,17 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
     plt.xlabel("timestep")
     plt.ylabel("reward")
 
+    # Get policy
+    plt.figure(5)
+    def policy(pos, vel):
+        return solver.get_epsilon_greedy_action([pos, vel], 0)
+    policy_matrix = sample(func=policy, res=100, x_min=x_min, x_max=x_max, y_min=y_min, y_max=y_max)
+    plt.imshow(policy_matrix, origin="lower", extent=[x_min, x_max, y_min, y_max], cmap="bwr")
+    plt.title("Policy")
+    plt.colorbar(label="Applied torque")
+    plt.xlabel("pos")
+    plt.ylabel("vel")
+
     # Get sample trajectory animation
     get_animation(states=state_traj, actions=action_traj, filename="sample_traj.mp4")
 
@@ -236,13 +244,12 @@ def create_plots(solver, approx_weights, true_value_samples, res, states):
 
 # Run Q learning and compare with ground truth value function
 solver = initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1)
-approx_weights, states = run_q_learning(solver, num_episodes=10)
-"""
+approx_weights, states = run_q_learning(solver, num_episodes=500)
 true_value_samples = get_true_value_func_samples(
-    solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-1, vel_max=1
+    solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-2, vel_max=2
 )
-create_plots(solver, approx_weights, true_value_samples, res=10, states=states)
-"""
+create_plots(solver, approx_weights, true_value_samples, res=10, states=states, x_min=0, x_max=2 * np.pi, y_min=-2, y_max=2)
+
 
 # Find least squares fit to action-feature vector
 get_plot_least_squares(solver=solver, x_min=0, x_max=2 * np.pi, y_min=-2, y_max=2)
