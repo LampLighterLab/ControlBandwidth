@@ -189,6 +189,8 @@ def create_plots(
     state_traj, action_traj = sample_trajectory(solver=solver)
     num_timesteps = int(solver.max_timestep // solver.env.sim_timestep)
 
+    plt.savefig("out/true_approx_q_val.png")
+
     plt.figure(2)
     plt.scatter(
         state_traj[0, :],
@@ -200,6 +202,7 @@ def create_plots(
     plt.colorbar(label="Timestep")
     plt.xlabel("pos")
     plt.ylabel("vel")
+    plt.savefig("out/sample_traj_states.png")
 
     # 2d histogram of states visited during q-learning
     plt.figure(3)
@@ -215,6 +218,7 @@ def create_plots(
     plt.colorbar(label="Frequency")
     plt.xlabel("pos")
     plt.ylabel("vel")
+    plt.savefig("out/visited_states_during_learning.png")
 
     # Plot rewards recieved during sample trajectory
     plt.figure(4)
@@ -226,6 +230,7 @@ def create_plots(
     plt.title("Rewards during sample trajectory")
     plt.xlabel("timestep")
     plt.ylabel("reward")
+    plt.savefig("out/sample_traj_rewards.png")
 
     # Get policy
     plt.figure(5)
@@ -243,18 +248,19 @@ def create_plots(
     plt.colorbar(label="Applied torque")
     plt.xlabel("pos")
     plt.ylabel("vel")
+    plt.savefig("out/policy.png")
 
     # Get sample trajectory animation
-    get_animation(states=state_traj, actions=action_traj, filename="sample_traj.mp4")
+    get_animation(states=state_traj, actions=action_traj)
 
     plt.show()
 
 
 # Run Q learning and compare with ground truth value function
-solver = initialize_env_and_solver(sim_timestep=0.005, control_timestep=0.2)
-approx_weights, states = run_q_learning(solver, num_episodes=500)
+solver = initialize_env_and_solver(sim_timestep=0.005, control_timestep=0.05)
+approx_weights, states = run_q_learning(solver, num_episodes=100)
 true_value_samples = get_true_value_func_samples(
-    solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-2, vel_max=2
+    solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-4, vel_max=4
 )
 create_plots(
     solver,
@@ -264,10 +270,9 @@ create_plots(
     states=states,
     x_min=0,
     x_max=2 * np.pi,
-    y_min=-2,
-    y_max=2,
+    y_min=-4,
+    y_max=4,
 )
 
-
 # Find least squares fit to action-feature vector
-get_plot_least_squares(solver=solver, x_min=0, x_max=2 * np.pi, y_min=-2, y_max=2)
+get_plot_least_squares(solver=solver, x_min=0, x_max=2 * np.pi, y_min=-4, y_max=4)

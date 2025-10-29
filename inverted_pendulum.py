@@ -80,8 +80,8 @@ class InvertedPendulum:
         # Testing removing m,g,l from calculation because it's the same up to a constant
         pos = s[0]
         vel = s[1]
-        KE = 0.5 * vel**2
-        PE = 1 - np.cos(pos)
+        # KE = 0.5 * vel**2
+        # PE = 1 - np.cos(pos)
         return np.array(
             [
                 1,
@@ -89,10 +89,6 @@ class InvertedPendulum:
                 np.sin(pos - np.pi),
                 vel,
                 vel**2,
-                a * np.cos(pos - np.pi),
-                a * np.sin(pos - np.pi),
-                a * vel,
-                a * vel**2,
                 a,
             ]
         )

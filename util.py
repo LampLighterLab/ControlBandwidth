@@ -20,7 +20,7 @@ def initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1):
         initial_state=initial_state,
         epsilon=0.2,
         discount_factor=0.98,
-        learning_rate=1e-4,
+        learning_rate=1e-3,
         max_timestep=30,
     )
     return solver
@@ -196,4 +196,5 @@ def get_plot_least_squares(solver, x_min, x_max, y_min, y_max):
     plt.colorbar(label="Action value")
     plt.xlabel("pos")
     plt.ylabel("vel")
+    plt.savefig("out/least_squares.png")
     plt.show()

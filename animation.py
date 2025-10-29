@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, FFMpegWriter
 
 
-def get_animation(states, actions, filename="pendulum_animation.mp4"):
+def get_animation(states, actions, filename="out/sample_traj_animation.mp4"):
     theta = states[0, :]
     L = 1.0  # pendulum length
 
@@ -72,5 +72,3 @@ def get_animation(states, actions, filename="pendulum_animation.mp4"):
     ani.save(filename, writer=writer)
 
     print(f"Animation saved as {filename}")
-
-    plt.show()
