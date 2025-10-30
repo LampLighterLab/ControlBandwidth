@@ -20,8 +20,8 @@ def initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1):
         initial_state=initial_state,
         epsilon=0.2,
         discount_factor=0.98,
-        learning_rate=1e-4,
-        max_sim_time=20,
+        learning_rate=1e-5,
+        max_sim_time=10,
     )
     return solver
 
@@ -67,7 +67,7 @@ def least_squares_fit(solver, res, x_min, x_max, y_min, y_max, t_min, t_max):
     # `solver` and `env` just used for computing dot product of
     # action-feature vector and weights
     env = solver.env
-    t_res = 11
+    t_res = 7
     pos_range = np.linspace(x_min, x_max, res)
     vel_range = np.linspace(y_min, y_max, res)
     torque_range = np.linspace(t_min, t_max, t_res)
@@ -178,7 +178,7 @@ def get_plot_least_squares(solver, res, x_min, x_max, y_min, y_max):
     ls_q_vals = sample_action_feature_vec(
         weights=ls_weights,
         res=res,
-        t_res=11,
+        t_res=7,
         x_min=x_min,
         x_max=x_max,
         y_min=y_min,

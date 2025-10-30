@@ -23,12 +23,12 @@ def run_q_learning(solver, num_episodes):
     for i in range(n):
         print(solver.weights)
         # Decaying exponential learning rate
-        solver.learning_rate *= 0.997
+        # solver.learning_rate *= 0.997
         prev_weight_vector = solver.weights
         # Random initial state
         random_initial_state = [
             np.pi + 0.25 * np.pi * np.random.random(),
-            1 * np.random.random(),
+            0.5 * np.random.random(),
         ]
         solver.initial_state = np.array(random_initial_state)
         episode_states = solver.run_episode()
@@ -211,7 +211,7 @@ def create_plots(
         y=states[1, :],
         bins=40,
         range=[[x_min, x_max], [y_min, y_max]],
-        cmap="magma",
+        cmap="Greens",
         norm=matplotlib.colors.LogNorm(),
     )
     plt.title("States visited during Q-Learning")
@@ -258,7 +258,7 @@ def create_plots(
 
 # Run Q learning and compare with ground truth value function
 solver = initialize_env_and_solver(sim_timestep=0.005, control_timestep=0.05)
-approx_weights, states = run_q_learning(solver, num_episodes=100)
+approx_weights, states = run_q_learning(solver, num_episodes=200)
 true_value_samples = get_true_value_func_samples(
     solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-4, vel_max=4
 )

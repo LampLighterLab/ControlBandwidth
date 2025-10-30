@@ -145,8 +145,8 @@ class QLearningPendulum:
             * self.env.params["gravity"]
             * self.env.params["length"]
         )
-        self.weights = np.zeros(
-            len(self.env.action_feature_vector(0, self.initial_state))
+        self.weights = np.random.rand(
+            self.env.action_feature_vector(0, self.initial_state).shape[0]
         )
         self.random_generator = np.random.default_rng(123)
         self.episode_count = 0
@@ -166,27 +166,13 @@ class QLearningPendulum:
                 self.random_generator.random() * 2 * self.max_torque - self.max_torque
             )
 
-        sample_torques = np.linspace(-1 * self.max_torque, self.max_torque, 5)
+        sample_torques = np.linspace(-1 * self.max_torque, self.max_torque, 9)
         sample_q_vals = np.zeros(sample_torques.size)
         for i in range(sample_torques.size):
             sample_q_vals[i] = self.action_value_approx(
                 sample_torques[i], state
             )  # maybe more efficient with vectorized function
         return sample_torques[np.argmax(sample_q_vals)]
-
-    def update_weights(self, states, rewards, actions):
-        i = len(states)
-        return_i = 0
-        while i > 0:
-            i -= 1
-            return_i = rewards[i] + self.discount_factor * return_i
-            mc_error = return_i - self.action_value_approx(actions[i], states[i])
-            self.weights = np.add(
-                self.weights,
-                self.learning_rate
-                * mc_error
-                * self.env.action_feature_vector(actions[i], states[i]),
-            )
 
     # Return list of states
     def run_episode(self):
@@ -221,11 +207,11 @@ class QLearningPendulum:
                     self.env.action_feature_vector(actions[t], states[:, t]),
                 )
             )
-            self.weights = np.add(
-                self.weights,
-                self.learning_rate
+            self.weights = (
+                self.weights
+                + self.learning_rate
                 * q_error
-                * self.env.action_feature_vector(actions[t], states[:, t]),
+                * self.env.action_feature_vector(actions[t], states[:, t])
             )
         self.episode_count += 1
         return states

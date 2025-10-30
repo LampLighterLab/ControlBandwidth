@@ -99,7 +99,11 @@ class InvertedPendulum:
                 vel,
                 vel**2,
                 a,
+                a**2,
+                a * np.cos(pos - np.pi),
+                a * np.sin(pos - np.pi),
                 E - E_ideal,
+                a * (E - E_ideal) ** 2,
                 (E - E_ideal) ** 2,
             ]
         )
