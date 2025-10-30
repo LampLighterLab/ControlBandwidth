@@ -132,9 +132,7 @@ def least_squares_fit(solver, res, x_min, x_max, y_min, y_max, t_min, t_max):
 
     X = X.reshape((-1, feature_vec_len))
     Y = sample_q_matrix.reshape(-1)
-    least_squares_weights = (
-        np.linalg.inv((X.T @ X) + 1e-10 * np.identity(feature_vec_len)) @ X.T @ Y
-    )
+    least_squares_weights, _, _, _ = np.linalg.lstsq(X, Y)
     return least_squares_weights
 
 
