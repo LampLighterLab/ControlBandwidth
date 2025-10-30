@@ -67,7 +67,7 @@ def run_q_learning_pendulum():
         epsilon=0.1,
         discount_factor=0.9,
         learning_rate=3e-5,
-        max_timestep=60,
+        max_sim_time=60,
     )
 
     fig, axs = plt.subplots(1, 3)
@@ -136,7 +136,7 @@ def run_q_learning_pendulum():
     states = [curr_state]
     rewards = list()
     t = 0
-    while t < q_solver.max_timestep:
+    while t < q_solver.max_sim_time:
         next_action = q_solver.get_epsilon_greedy_action(curr_state)
         rewards.append(env.get_action_reward(next_action, curr_state))
         curr_state = env.get_next_state(next_action, curr_state)
@@ -157,7 +157,7 @@ def run_q_learning_pendulum():
     states[0] = format_pos_vectorized(states[0])
 
     # Plot sample trajectory
-    timesteps = np.linspace(0, q_solver.max_timestep, len(states[0]) - 1)
+    timesteps = np.linspace(0, q_solver.max_sim_time, len(states[0]) - 1)
     img = axs[2].scatter(
         states[0][:-1], states[1][:-1], c=timesteps, cmap="inferno"
     )  # last state has no associated reward

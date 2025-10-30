@@ -13,13 +13,13 @@ class MonteCarloDiscrete:
         initial_state,
         environment,
         discount_factor,
-        max_timestep=1000,
+        max_sim_time=1000,
     ):
         self.policy = initial_policy
         self.initial_state = initial_state
         self.env = environment
         self.discount_factor = discount_factor
-        self.max_timestep = max_timestep  # use float('inf') for infinite horizon
+        self.max_sim_time = max_sim_time  # use float('inf') for infinite horizon
         self.visits = dict()
         self.values = dict()
         self.state = initial_state
@@ -41,7 +41,7 @@ class MonteCarloDiscrete:
         rewards = list()  # rewards[n]: reward at timestep n+1
         stepnum = 0
         while (
-            stepnum < self.max_timestep and self.state not in self.env.terminal_states
+            stepnum < self.max_sim_time and self.state not in self.env.terminal_states
         ):
             next_action = self.policy(self.state)
             states.append(self.state)
@@ -56,20 +56,20 @@ class MonteCarloDiscrete:
             states.append(self.state)
             if self.discount_factor == 1:
                 terminal_reward = self.env.get_state_reward(states[-1]) * (
-                    self.max_timestep - stepnum
+                    self.max_sim_time - stepnum
                 )
-            elif math.isinf(self.max_timestep):
+            elif math.isinf(self.max_sim_time):
                 terminal_reward = self.env.get_state_reward(states[-1]) / (
                     1 - self.discount_factor
                 )
             else:
                 terminal_reward = self.env.get_state_reward(states[-1]) * (
-                    (1 - (self.discount_factor ** (self.max_timestep - stepnum)))
+                    (1 - (self.discount_factor ** (self.max_sim_time - stepnum)))
                     / (1 - self.discount_factor)
                 )
             rewards.append(terminal_reward)
 
-        if stepnum == self.max_timestep:
+        if stepnum == self.max_sim_time:
             rewards.append(self.env.get_state_reward(states[-1]))
 
         # Update value function
@@ -92,12 +92,12 @@ class MonteCarloContinuous:
     # Every-visit Monte Carlo with linear value func approx and continuous actions
 
     def __init__(
-        self, initial_state, environment, discount_factor, policy, max_timestep=20
+        self, initial_state, environment, discount_factor, policy, max_sim_time=20
     ):
         self.initial_state = initial_state
         self.env = environment
         self.discount_factor = discount_factor
-        self.max_timestep = max_timestep
+        self.max_sim_time = max_sim_time
         self.get_next_action = policy  # function (state) -> real number
 
         self.weights = np.zeros(self.env.feature_vector(initial_state).shape[0])
@@ -114,7 +114,7 @@ class MonteCarloContinuous:
         states = list()  # states[n]: state at timestep n
         rewards = list()  # rewards[n]: reward at timestep n+1
         t = 0
-        while t < self.max_timestep:
+        while t < self.max_sim_time:
             next_action = self.get_next_action(self.state)
             states.append(self.state)
             rewards.append(self.env.get_action_reward(next_action, self.state))
@@ -145,7 +145,7 @@ class TDLambdaDiscrete:
         discount_factor,
         learning_rate,
         trace_decay,
-        max_timestep=1000,
+        max_sim_time=1000,
     ):
         self.policy = initial_policy
         self.initial_state = initial_state
@@ -153,7 +153,7 @@ class TDLambdaDiscrete:
         self.discount_factor = discount_factor
         self.learning_rate = learning_rate
         self.trace_decay = trace_decay
-        self.max_timestep = max_timestep  # use float('inf') for infinite horizon
+        self.max_sim_time = max_sim_time  # use float('inf') for infinite horizon
         self.state = self.initial_state
         self.values = dict()
 
@@ -173,7 +173,7 @@ class TDLambdaDiscrete:
         stepnum = 0
 
         while (
-            stepnum < self.max_timestep and self.state not in self.env.terminal_states
+            stepnum < self.max_sim_time and self.state not in self.env.terminal_states
         ):
             next_action = self.policy(self.state)
             next_state = self.env.get_next_state(
@@ -207,7 +207,7 @@ class TDLambdaDiscrete:
 
         # Terminal state reached. This code basically just does the same thing as the previous loop.
         # ? There may be a closed form expression for the value function of each state once a terminal state is reached, given a number of remaining steps. However, for now this explicitly simulates each state
-        for i in range(self.max_timestep - stepnum):
+        for i in range(self.max_sim_time - stepnum):
             reward = self.env.get_state_reward(self.state)
             td_error = (
                 reward

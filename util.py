@@ -20,8 +20,8 @@ def initialize_env_and_solver(sim_timestep=0.01, control_timestep=0.1):
         initial_state=initial_state,
         epsilon=0.2,
         discount_factor=0.98,
-        learning_rate=1e-3,
-        max_timestep=30,
+        learning_rate=1e-4,
+        max_sim_time=20,
     )
     return solver
 
@@ -45,7 +45,7 @@ def sample(func, res, x_min, x_max, y_min, y_max, dtype=np.float64):
 def sample_trajectory(solver):
     env = solver.env
     initial_state = solver.initial_state
-    num_timesteps = int(solver.max_timestep // solver.env.sim_timestep)
+    num_timesteps = int(solver.max_sim_time // solver.env.sim_timestep)
     state_traj = np.zeros((initial_state.size, num_timesteps + 1))
     action_traj = np.zeros(num_timesteps + 1)
     state_traj[:, 0] = initial_state
@@ -75,7 +75,7 @@ def least_squares_fit(solver, res, x_min, x_max, y_min, y_max, t_min, t_max):
     sample_q_matrix = np.zeros((res, res, t_res))
 
     def sample_q(pos, vel, torque):
-        num_timesteps = int(solver.max_timestep // env.control_timestep)
+        num_timesteps = int(solver.max_sim_time // env.control_timestep)
         state_traj = np.zeros(
             (
                 solver.initial_state.size,
@@ -164,25 +164,25 @@ def sample_action_feature_vec(
     return max_q_vals
 
 
-def get_plot_least_squares(solver, x_min, x_max, y_min, y_max):
+def get_plot_least_squares(solver, res, x_min, x_max, y_min, y_max):
     ls_weights = least_squares_fit(
         solver=solver,
-        res=2,
-        x_min=0,
-        x_max=2 * np.pi,
-        y_min=-1,
-        y_max=1,
+        res=res,
+        x_min=x_min,
+        x_max=x_max,
+        y_min=y_min,
+        y_max=y_max,
         t_min=-0.5,
         t_max=0.5,
     )
     ls_q_vals = sample_action_feature_vec(
         weights=ls_weights,
-        res=20,
+        res=res,
         t_res=11,
-        x_min=0,
-        x_max=2 * np.pi,
-        y_min=-2,
-        y_max=2,
+        x_min=x_min,
+        x_max=x_max,
+        y_min=y_min,
+        y_max=y_max,
         t_min=-0.5,
         t_max=0.5,
     )

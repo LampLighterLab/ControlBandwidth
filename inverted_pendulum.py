@@ -44,19 +44,26 @@ class InvertedPendulum:
             self.params["mass"]
             * self.params["gravity"]
             * self.params["length"]
-            * (1 - np.cos(state[0, :]))
+            * (1 - np.cos(state[0]))
         )
         return PE
 
     def get_kinetic_energy(self, state):
-        KE = self.params["mass"] / 2 * (self.params["length"] * state[1, :]) ** 2
+        KE = self.params["mass"] / 2 * (self.params["length"] * state[1]) ** 2
         return KE
 
     def get_energy(self, state):
         return self.get_potential_energy(state) + self.get_kinetic_energy(state)
 
     def get_reward(self, a, s):
-        return (1 - np.cos(s[0])) - 0.1 * (a**2) - 0.1 * (s[1] ** 2)
+        E = self.get_energy(s)
+        E_ideal = self.get_energy([np.pi, 0])
+        return (
+            (1 - np.cos(s[0]))
+            - 0.1 * (a**2)
+            - 0.1 * (s[1] ** 2)
+            - 0.2 * abs(E - E_ideal)
+        )
 
     # The action is the applied torque
     # ! stop using this because it computes next_state unnecessarily
@@ -80,6 +87,8 @@ class InvertedPendulum:
         # Testing removing m,g,l from calculation because it's the same up to a constant
         pos = s[0]
         vel = s[1]
+        E = self.get_energy(s)
+        E_ideal = self.get_energy([np.pi, 0])
         # KE = 0.5 * vel**2
         # PE = 1 - np.cos(pos)
         return np.array(
@@ -90,5 +99,7 @@ class InvertedPendulum:
                 vel,
                 vel**2,
                 a,
+                E - E_ideal,
+                (E - E_ideal) ** 2,
             ]
         )

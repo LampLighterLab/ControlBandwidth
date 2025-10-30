@@ -9,14 +9,14 @@ from inverted_pendulum import InvertedPendulum
 class QLearning:
     # Implements the Q Learning policy improvement algorithm with action-value function approximation
 
-    def __init__(self, env, initial_state, epsilon, discount_factor, max_timestep=1000):
+    def __init__(self, env, initial_state, epsilon, discount_factor, max_sim_time=1000):
         self.env = env
         self.initial_state = initial_state
         self.epsilon = (
             epsilon  # Random exploration factor in epsilon-greedy behavior policy
         )
         self.discount_factor = discount_factor
-        self.max_timestep = max_timestep
+        self.max_sim_time = max_sim_time
         self.state = initial_state
         self.random_generator = np.random.default_rng(1234526)
 
@@ -71,7 +71,7 @@ class QLearning:
         rewards = list()
         actions = list()
         while (
-            stepnum < self.max_timestep and self.state not in self.env.terminal_states
+            stepnum < self.max_sim_time and self.state not in self.env.terminal_states
         ):
             # Generate next action, state according to epsilon-greedy policy
             max_q_val = self.action_value_approx(next_action, self.state)
@@ -129,7 +129,7 @@ class QLearningPendulum:
         epsilon,
         discount_factor,
         learning_rate,
-        max_timestep=100,
+        max_sim_time=100,
     ):
         self.env = env
         self.state = initial_state
@@ -137,7 +137,7 @@ class QLearningPendulum:
         self.epsilon = epsilon
         self.discount_factor = discount_factor
         self.learning_rate = learning_rate
-        self.max_timestep = max_timestep
+        self.max_sim_time = max_sim_time
 
         self.max_torque = (
             0.5
@@ -192,7 +192,7 @@ class QLearningPendulum:
     def run_episode(self):
         self.state = self.initial_state.copy()
 
-        t_max = int(self.max_timestep // self.env.control_timestep)
+        t_max = int(self.max_sim_time // self.env.control_timestep)
         # states[:, t] is the state [pos, vel] at timestep t
         states = np.zeros((self.initial_state.size, t_max + 1))
         rewards = np.zeros((t_max,))
@@ -241,7 +241,7 @@ class ReinforceSoftmax:
         discount_factor,
         step_size,
         temperature,
-        max_timestep=1000,
+        max_sim_time=1000,
     ):
         self.env = env
         self.initial_state = initial_state
@@ -249,7 +249,7 @@ class ReinforceSoftmax:
         self.discount_factor = discount_factor
         self.step_size = step_size
         self.temperature = temperature
-        self.max_timestep = max_timestep
+        self.max_sim_time = max_sim_time
 
         self.weights = np.zeros(len(env.feature_vector(initial_state)))
 
@@ -293,7 +293,7 @@ class ReinforceSoftmax:
         actions = list()
         rewards = list()
         while (
-            stepnum < self.max_timestep and self.state not in self.env.terminal_states
+            stepnum < self.max_sim_time and self.state not in self.env.terminal_states
         ):
             # Generate next action, state according to parameterized policy
             action_probs_tuple = self.get_action_probs(self.state)
@@ -328,7 +328,7 @@ class ReinforceSoftmax:
         states = list()
         stepnum = 0
         state = self.initial_state
-        while stepnum < self.max_timestep and state not in self.env.terminal_states:
+        while stepnum < self.max_sim_time and state not in self.env.terminal_states:
             # Generate next action, state according to parameterized policy
             action_probs_tuple = self.get_action_probs(state)
             valid_actions = action_probs_tuple[0]

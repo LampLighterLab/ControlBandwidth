@@ -56,7 +56,7 @@ def run_monte_carlo_continuous():
         control_timestep=0.1,
     )
     mc = MonteCarloContinuous(
-        initial_state, env, discount_factor=0, policy=policy, max_timestep=1000
+        initial_state, env, discount_factor=0, policy=policy, max_sim_time=1000
     )
 
     # Run episodes
@@ -76,7 +76,7 @@ def run_monte_carlo_continuous():
     print(
         f"Total energy of first state is {0.5 * curr_state[1] ** 2 + (np.cos(curr_state[0]) - 1)}"
     )
-    while t < mc.max_timestep:
+    while t < mc.max_sim_time:
         next_action = mc.get_next_action(curr_state)
         rewards.append(env.get_action_reward(next_action, curr_state))
         curr_state = env.get_next_state(next_action, curr_state)

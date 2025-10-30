@@ -55,12 +55,12 @@ def get_true_value_func_samples(solver, res, pos_min, pos_max, vel_min, vel_max)
         state_traj = np.zeros(
             (
                 solver.initial_state.size,
-                int(solver.max_timestep // env.control_timestep) + 1,
+                int(solver.max_sim_time // env.control_timestep) + 1,
             )
         )
         state_traj[:, 0] = np.array([pos, vel])
-        rewards = np.zeros(int(solver.max_timestep // env.control_timestep))
-        for t in range(int(solver.max_timestep // env.control_timestep)):
+        rewards = np.zeros(int(solver.max_sim_time // env.control_timestep))
+        for t in range(int(solver.max_sim_time // env.control_timestep)):
             next_action = solver.get_epsilon_greedy_action(state_traj[:, t], epsilon=0)
             state_traj[:, t + 1] = env.get_next_state(next_action, state_traj[:, t])
             rewards[t] = env.get_reward(next_action, state_traj[:, t])
@@ -187,7 +187,7 @@ def create_plots(
     axs[1].set_ylabel("vel")
 
     state_traj, action_traj = sample_trajectory(solver=solver)
-    num_timesteps = int(solver.max_timestep // solver.env.sim_timestep)
+    num_timesteps = int(solver.max_sim_time // solver.env.sim_timestep)
 
     plt.savefig("out/true_approx_q_val.png")
 
@@ -275,4 +275,6 @@ create_plots(
 )
 
 # Find least squares fit to action-feature vector
-get_plot_least_squares(solver=solver, x_min=0, x_max=2 * np.pi, y_min=-4, y_max=4)
+get_plot_least_squares(
+    solver=solver, res=10, x_min=0, x_max=2 * np.pi, y_min=-4, y_max=4
+)
