@@ -1,0 +1,28 @@
+name: Large File Guard
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Block files over 50 KB
+        env:
+          LIMIT_KB: "50"
+        run: |
+          limit_bytes=$((LIMIT_KB * 1024))
+          found=0
+          while IFS= read -r -d '' file; do
+            size=$(stat --printf='%s' "$file")
+            if [ "$size" -gt "$limit_bytes" ]; then
+              printf 'File %s is %s bytes (limit %s)\n' "$file" "$size" "$limit_bytes"
+              found=1
+            fi
+          done < <(git ls-files -z)
+          if [ "$found" -ne 0 ]; then
+            exit 1
+          fi
