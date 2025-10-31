@@ -2,3 +2,4 @@
 *.pyo
 *.mp4
 profile.out
+out/
