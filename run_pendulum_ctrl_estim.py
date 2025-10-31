@@ -67,7 +67,7 @@ def get_true_value_func_samples(solver, res, pos_min, pos_max, vel_min, vel_max)
         state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
 
         return_i = rewards[-1]
-        for i in range(rewards.shape[0] - 1):
+        for i in range(rewards.shape[0]):
             return_i *= solver.discount_factor
             return_i += rewards[rewards.shape[0] - i - 1]
         return return_i
