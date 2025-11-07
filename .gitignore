@@ -1,5 +1,6 @@
 *.pyc
 *.pyo
 *.mp4
+*.pkl
 profile.out
 out/

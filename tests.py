@@ -42,10 +42,11 @@ def test_least_squares():
     )
     print(ls_weights)
 
-#test_least_squares()
+
+# test_least_squares()
 
 
-x = [1,2,3,4,5]
+x = [1, 2, 3, 4, 5]
 sum = 0
 for i in range(len(x)):
     sum *= 0.1
