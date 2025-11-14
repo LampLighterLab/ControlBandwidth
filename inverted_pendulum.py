@@ -71,7 +71,7 @@ class InvertedPendulum:
         next_state = self.get_next_state(a, s)
         return self.get_reward(next_state)
 
-    def feature_vector(self, s):
+    def state_feature_vector(self, s):
         pos = s[0]
         vel = s[1]
         KE = 0.5 * self.params["mass"] * vel**2
