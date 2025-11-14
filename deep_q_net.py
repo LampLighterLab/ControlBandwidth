@@ -123,9 +123,36 @@ env = InvertedPendulum(params={"length":1, "mass":1, "gravity":1, "damping":0.01
                        initial_state=[3.2,0],
                        sim_timestep=0.01,
                        control_timestep=0.1)
-p = DQNPendulum(env=env, initial_state=[3.2,0], epsilon=0.2, discount_factor=0.98, learning_rate=1e-2)
-p.sample_experience(num_episodes=5)
+p = DQNPendulum(env=env, initial_state=[3.2,0], epsilon=0.2, discount_factor=0.98, learning_rate=1e-2, max_sim_time=10)
+p.sample_experience(num_episodes=10)
 p.train_policy_net(num_epochs=10)
-p.clear_experience_memory(num_episodes=2)
-p.sample_experience(num_episodes=5)
-p.train_policy_net(num_epochs=20)
+p.clear_experience_memory(num_episodes=10)
+p.sample_experience(num_episodes=20)
+p.train_policy_net(num_epochs=50)
+p.sample_experience(num_episodes=20)
+p.clear_experience_memory(num_episodes=20)
+p.train_policy_net(num_epochs=100)
+
+
+def sample_trajectory(solver):
+    env = solver.env
+    initial_state = np.array(solver.initial_state)
+    num_timesteps = int(solver.max_sim_time // solver.env.sim_timestep)
+    state_traj = np.zeros((initial_state.size, num_timesteps + 1))
+    action_traj = np.zeros(num_timesteps + 1)
+    state_traj[:, 0] = initial_state
+    solver.state = solver.initial_state
+    for i in range(num_timesteps):
+        action_traj[i] = solver.get_epsilon_greedy_action(solver.state, epsilon=0)
+        # set first argument to 0 to test without control
+        next_state = env.get_next_state(action_traj[i], state_traj[:, i])
+        state_traj[:, i + 1] = next_state
+        solver.state = next_state
+    state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
+    return state_traj, action_traj
+st, at = sample_trajectory(p)
+st = np.array(st)
+at = np.array(at)
+
+from animation import get_animation
+get_animation(st, at, filename="out/dqn_sample_traj_animation.mp4")

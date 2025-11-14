@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.colors
 import time
 from inverted_pendulum import InvertedPendulum
+from deep_q_net import DQNPendulum
 from animation import get_animation
 from util import (
     sample,
@@ -258,11 +259,11 @@ def create_plots(
 
 
 # Run Q learning and compare with ground truth value function
-solver = initialize_env_and_solver(sim_timestep=0.005, control_timestep=0.01)
-approx_weights, states = run_q_learning(solver, num_episodes=200)
-true_value_samples = get_true_value_func_samples(
-    solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-4, vel_max=4
-)
+env = InvertedPendulum(params={"length":1, "mass":1, "gravity":1, "damping":0.01},
+                       initial_state=[3.2,0],
+                       sim_timestep=0.01,
+                       control_timestep=0.1)
+solver = DQNPendulum(env=env, initial_state=[3.2,0], epsilon=0.2, discount_factor=0.98, learning_rate=1e-2)
 create_plots(
     solver,
     approx_weights,
@@ -275,6 +276,9 @@ create_plots(
     y_max=4,
 )
 
+
+
+'''
 ls_weights = least_squares_fit(solver,
                                10,
                                x_min=0,
@@ -288,7 +292,8 @@ with open("ls_weights.pkl", "wb") as file:
     pickle.dump(ls_weights, file)
     print("least squares weights saved")
 
-# Find least squares fit to action-feature vector
-#get_plot_least_squares(
-#    solver=solver, res=10, x_min=0, x_max=2 * np.pi, y_min=-4, y_max=4
-#)
+ Find least squares fit to action-feature vector
+get_plot_least_squares(
+    solver=solver, res=10, x_min=0, x_max=2 * np.pi, y_min=-4, y_max=4
+)
+'''
