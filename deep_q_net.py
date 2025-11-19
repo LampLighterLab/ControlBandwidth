@@ -8,13 +8,18 @@ class DQN(nn.Module):
 
     def __init__(self, num_features, hidden_layer_size, torque_res):
         super(DQN, self).__init__()
-        self.hidden_layer = nn.Linear(num_features, hidden_layer_size)
-        self.output_layer = nn.Linear(hidden_layer_size, torque_res)
+        self.hidden_1 = nn.Linear(num_features, hidden_layer_size)
+        self.hidden_2 = nn.Linear(hidden_layer_size, hidden_layer_size)
+        self.output = nn.Linear(hidden_layer_size, torque_res)
 
     # Output torque is an element of linspace(-max_torque, max_torque, torque_res) (increasing order)
     def forward(self, x):
-        x = F.relu(self.hidden_layer(x))
-        return self.output_layer(x)
+        x = self.hidden_1(x)
+        x = F.relu(x)
+        x = self.hidden_2(x)
+        x = F.relu(x)
+        x = self.output(x)
+        return x
 
 def init_normal(model, mean=0.0, std=0.1):
     for m in model.modules():
@@ -49,8 +54,8 @@ class DQNPendulum:
 
         self.num_features = self.env.state_feature_vector(self.initial_state).shape[0]
         self.features = lambda s: torch.tensor(self.env.state_feature_vector(s), dtype=torch.float32)
-        self.policy_net = DQN(num_features=self.num_features, hidden_layer_size=10, torque_res=3)
-        self.target_net = DQN(num_features=self.num_features, hidden_layer_size=10, torque_res=3)
+        self.policy_net = DQN(num_features=self.num_features, hidden_layer_size=32, torque_res=3)
+        self.target_net = DQN(num_features=self.num_features, hidden_layer_size=32, torque_res=3)
         init_normal(self.policy_net)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         # self.experience_memory[i, :] contains [s, a, r, s'], length 2*feature vec length + 2
@@ -123,10 +128,9 @@ env = InvertedPendulum(params={"length":1, "mass":1, "gravity":1, "damping":0.01
                        initial_state=[3.2,0],
                        sim_timestep=0.01,
                        control_timestep=0.1)
-p = DQNPendulum(env=env, initial_state=[3.2,0], epsilon=0.2, discount_factor=0.98, learning_rate=1e-2, max_sim_time=10)
-p.sample_experience(num_episodes=10)
+p = DQNPendulum(env=env, initial_state=[3.2,0], epsilon=0.2, discount_factor=0.98, learning_rate=1e-3, max_sim_time=10)
+p.sample_experience(num_episodes=5)
 p.train_policy_net(num_epochs=10)
-p.clear_experience_memory(num_episodes=10)
 
 def sample_trajectory(solver):
     env = solver.env
@@ -136,8 +140,10 @@ def sample_trajectory(solver):
     action_traj = np.zeros(num_timesteps + 1)
     state_traj[:, 0] = initial_state
     solver.state = solver.initial_state
+    torques = np.linspace(-1 * solver.max_torque, solver.max_torque, 3)
     for i in range(num_timesteps):
-        action_traj[i] = solver.get_epsilon_greedy_action(solver.state, epsilon=0)
+        next_action_index = solver.get_epsilon_greedy_action(solver.state, epsilon=0)
+        action_traj[i] = torques[next_action_index]
         # set first argument to 0 to test without control
         next_state = env.get_next_state(action_traj[i], state_traj[:, i])
         state_traj[:, i + 1] = next_state

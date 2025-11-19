@@ -10,7 +10,7 @@ from util import (
     sample_trajectory,
     initialize_env_and_solver,
     get_plot_least_squares,
-    least_squares_fit
+    least_squares_fit,
 )
 import pickle
 
@@ -259,11 +259,19 @@ def create_plots(
 
 
 # Run Q learning and compare with ground truth value function
-env = InvertedPendulum(params={"length":1, "mass":1, "gravity":1, "damping":0.01},
-                       initial_state=[3.2,0],
-                       sim_timestep=0.01,
-                       control_timestep=0.1)
-solver = DQNPendulum(env=env, initial_state=[3.2,0], epsilon=0.2, discount_factor=0.98, learning_rate=1e-2)
+env = InvertedPendulum(
+    params={"length": 1, "mass": 1, "gravity": 1, "damping": 0.01},
+    initial_state=[3.2, 0],
+    sim_timestep=0.01,
+    control_timestep=0.1,
+)
+solver = DQNPendulum(
+    env=env,
+    initial_state=[3.2, 0],
+    epsilon=0.2,
+    discount_factor=0.98,
+    learning_rate=1e-2,
+)
 create_plots(
     solver,
     approx_weights,
@@ -277,8 +285,7 @@ create_plots(
 )
 
 
-
-'''
+"""
 ls_weights = least_squares_fit(solver,
                                10,
                                x_min=0,
@@ -296,4 +303,4 @@ with open("ls_weights.pkl", "wb") as file:
 get_plot_least_squares(
     solver=solver, res=10, x_min=0, x_max=2 * np.pi, y_min=-4, y_max=4
 )
-'''
+"""
