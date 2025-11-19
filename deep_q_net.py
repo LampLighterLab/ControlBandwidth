@@ -127,12 +127,6 @@ p = DQNPendulum(env=env, initial_state=[3.2,0], epsilon=0.2, discount_factor=0.9
 p.sample_experience(num_episodes=10)
 p.train_policy_net(num_epochs=10)
 p.clear_experience_memory(num_episodes=10)
-p.sample_experience(num_episodes=20)
-p.train_policy_net(num_epochs=50)
-p.sample_experience(num_episodes=20)
-p.clear_experience_memory(num_episodes=20)
-p.train_policy_net(num_epochs=100)
-
 
 def sample_trajectory(solver):
     env = solver.env
