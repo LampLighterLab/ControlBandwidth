@@ -35,6 +35,7 @@ class InvertedPendulum:
         return next_state
 
     def get_next_state(self, torque, state):
+        state = state.copy()
         for _ in range(int(self.control_timestep // self.sim_timestep)):
             state = self.integrate_rk4(state, torque, self.sim_timestep)
         return state

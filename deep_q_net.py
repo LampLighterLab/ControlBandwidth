@@ -12,7 +12,8 @@ class DQN(nn.Module):
         self.hidden_2 = nn.Linear(hidden_layer_size, hidden_layer_size)
         self.output = nn.Linear(hidden_layer_size, torque_res)
 
-    # Output torque is an element of linspace(-max_torque, max_torque, torque_res) (increasing order)
+    # Outputs [Q(s, a=-1*max_torque), Q(s, a=0), Q(s, a=max_torque)]
+    # or `torque_res` discrete actions but I have it set to 3 for now
     def forward(self, x):
         x = self.hidden_1(x)
         x = F.relu(x)
@@ -21,7 +22,7 @@ class DQN(nn.Module):
         x = self.output(x)
         return x
 
-def init_normal(model, mean=0.0, std=0.1):
+def init_normal(model, mean=0.0, std=1.0):
     for m in model.modules():
         if isinstance(m, nn.Linear):
             nn.init.normal_(m.weight, mean=mean, std=std)
@@ -66,6 +67,8 @@ class DQNPendulum:
         self.random_generator = np.random.default_rng(1234)
 
     # Returns the action index of the epsilon-greedy action in linspace over possible actions
+    # note DQN returns a vector of length 3 representing the Q values from -1*max torque, 0 torque, max torque
+    # this returns the index of the predicted best value [0...2]
     def get_epsilon_greedy_action(self, state, epsilon):
         r = self.random_generator.random()
         if r < epsilon:
@@ -74,7 +77,7 @@ class DQNPendulum:
             )
         return torch.argmax(self.policy_net.forward(self.features(state)))
 
-    # Append transitions from `num_episodes` episodes to the experience memory
+    # Generate episodes, append transitions from `num_episodes` episodes to the experience memory
     def sample_experience(self, num_episodes):
         transition_stack = torch.zeros((0, 2*self.num_features + 2))
         for eps in range(num_episodes):
@@ -85,7 +88,8 @@ class DQNPendulum:
                 action_index = self.get_epsilon_greedy_action(state=curr_state, epsilon=self.epsilon)
                 torques = torch.linspace(-1*self.max_torque, self.max_torque, 3)
                 reward = self.env.get_reward(torques[action_index], curr_state)
-                next_state = self.env.get_next_state(torques[action_index].numpy(), curr_state.numpy())
+                next_state_np = self.env.get_next_state(torques[action_index].numpy(), curr_state.numpy()).copy()
+                next_state = torch.from_numpy(next_state_np)
                 action_index = torch.tensor([action_index])
                 reward = torch.tensor([reward])
                 transition = torch.cat((self.features(curr_state), action_index, reward, self.features(next_state)))
@@ -101,7 +105,7 @@ class DQNPendulum:
         self.experience_memory = self.experience_memory[num_transitions:, :]
         print(f"{num_transitions} transitions removed from experience memory")
 
-    # Perform GD using Pytorch on experience memory, and periodically copy policy net weights to target net
+    # Perform GD using Pytorch on entire experience memory, and periodically copy policy net weights to target net
     def train_policy_net(self, num_epochs):
         optimizer = optim.SGD(self.policy_net.parameters(), lr=self.learning_rate, momentum=0.8)
         for epoch in range(num_epochs):
@@ -113,7 +117,8 @@ class DQNPendulum:
             for i in range(policy_net_preds_all_actions.shape[0]):
                 policy_net_preds[i] = policy_net_preds_all_actions[i, int(action_indices[i])]
             rewards = self.experience_memory[:, self.num_features+1]
-            loss = ((rewards + self.discount_factor * target_net_preds - policy_net_preds) ** 2).mean()
+            loss_func = nn.MSELoss()
+            loss = loss_func(rewards + self.discount_factor * target_net_preds, policy_net_preds)
             loss.backward()
             optimizer.step()
             print('Epoch {} MSE loss is {}'.format(epoch+1, loss.item()))
@@ -125,12 +130,18 @@ class DQNPendulum:
 
 from inverted_pendulum import InvertedPendulum
 env = InvertedPendulum(params={"length":1, "mass":1, "gravity":1, "damping":0.01},
-                       initial_state=[3.2,0],
-                       sim_timestep=0.01,
-                       control_timestep=0.1)
-p = DQNPendulum(env=env, initial_state=[3.2,0], epsilon=0.2, discount_factor=0.98, learning_rate=1e-3, max_sim_time=10)
-p.sample_experience(num_episodes=5)
-p.train_policy_net(num_epochs=10)
+                       initial_state=[0.1,0.0],
+                       sim_timestep=0.005,
+                       control_timestep=0.05)
+p = DQNPendulum(env=env,
+                initial_state=[0.1,0.0],
+                epsilon=0.2,
+                discount_factor=0.98,
+                learning_rate=1e-3,
+                max_sim_time=10)
+p.sample_experience(num_episodes=50)
+p.train_policy_net(num_epochs=100)
+p.clear_experience_memory(num_episodes=50)
 
 def sample_trajectory(solver):
     env = solver.env
