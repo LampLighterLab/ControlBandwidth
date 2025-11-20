@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import time
-from environment import Gridworld
+from gridworld import Gridworld
 from value_estimator import MonteCarloDiscrete, TDLambdaDiscrete, MonteCarloContinuous
 from inverted_pendulum import InvertedPendulum
 from random import Random

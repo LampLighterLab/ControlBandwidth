@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+from inverted_pendulum import InvertedPendulum
+from animation import get_animation
 
 class DQN(nn.Module):
 
@@ -128,7 +130,7 @@ class DQNPendulum:
                 print("policy net weights copied to target net")
 
 
-from inverted_pendulum import InvertedPendulum
+
 env = InvertedPendulum(params={"length":1, "mass":1, "gravity":1, "damping":0.01},
                        initial_state=[0.1,0.0],
                        sim_timestep=0.005,
@@ -165,5 +167,5 @@ st, at = sample_trajectory(p)
 st = np.array(st)
 at = np.array(at)
 
-from animation import get_animation
+
 get_animation(st, at, filename="out/dqn_sample_traj_animation.mp4")

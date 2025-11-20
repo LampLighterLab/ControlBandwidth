@@ -82,7 +82,7 @@ class InvertedPendulum:
             * self.params["length"]
             * (1 - np.cos(pos))
         )
-        return np.array([np.cos(pos), np.sin(pos), vel, abs(vel), KE, PE, 1])
+        return np.array([np.cos(pos), np.sin(pos), vel, abs(vel), np.sign(vel), KE, PE])
 
     def action_feature_vector(self, a, s):
         # Testing removing m,g,l from calculation because it's the same up to a constant

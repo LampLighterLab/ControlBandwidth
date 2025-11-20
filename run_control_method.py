@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import time
-from environment import Actions, Gridworld
+from gridworld import Actions, Gridworld
 from control_method import QLearning, ReinforceSoftmax, QLearningPendulum
 from inverted_pendulum import InvertedPendulum
 
