@@ -273,7 +273,9 @@ solver = DQNPendulum(
     learning_rate=1e-2,
 )
 approx_weights, states = run_q_learning(solver=solver, num_episodes=100)
-true_value_samples = get_true_value_func_samples(solver=solver, res=10, pos_min=0, pos_max=2*np.pi, vel_min=-4, vel_max=4)
+true_value_samples = get_true_value_func_samples(
+    solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-4, vel_max=4
+)
 create_plots(
     solver,
     approx_weights,
