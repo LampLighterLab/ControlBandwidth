@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
 from inverted_pendulum import InvertedPendulum
 from animation import get_animation
 
@@ -49,7 +50,7 @@ class DQNPendulum:
         self.max_sim_time = max_sim_time
 
         self.max_torque = (
-            0.5     # 1 means the pendulum is just able to hold itself up when parallel to ground
+            1.0     # 1 means the pendulum is just able to hold itself up when parallel to ground
             * self.env.params["mass"]
             * self.env.params["gravity"]
             * self.env.params["length"]
@@ -80,26 +81,30 @@ class DQNPendulum:
         return torch.argmax(self.policy_net.forward(self.features(state)))
 
     # Generate episodes, append transitions from `num_episodes` episodes to the experience memory
+    # also return average reward per episode
     def sample_experience(self, num_episodes):
         transition_stack = torch.zeros((0, 2*self.num_features + 2))
+        num_timesteps = int(self.max_sim_time // self.env.control_timestep) - 1
+        rewards = torch.zeros((num_episodes, num_timesteps))
         for eps in range(num_episodes):
             # Reset states
             curr_state = torch.tensor(self.initial_state)
             next_state = torch.tensor(self.initial_state)
-            for timestep in range(int(self.max_sim_time // self.env.control_timestep) - 1):
+            for timestep in range(num_timesteps):
                 action_index = self.get_epsilon_greedy_action(state=curr_state, epsilon=self.epsilon)
                 torques = torch.linspace(-1*self.max_torque, self.max_torque, 3)
                 reward = self.env.get_reward(torques[action_index], curr_state)
-                next_state_np = self.env.get_next_state(torques[action_index].numpy(), curr_state.numpy()).copy()
+                reward = torch.tensor([reward])
+                rewards[eps, timestep] = reward     # keep track of rewards
+                next_state_np = self.env.get_next_state(torques[action_index].numpy(), curr_state.numpy())
                 next_state = torch.from_numpy(next_state_np)
                 action_index = torch.tensor([action_index])
-                reward = torch.tensor([reward])
                 transition = torch.cat((self.features(curr_state), action_index, reward, self.features(next_state)))
                 curr_state = torch.tensor(next_state).detach()
                 transition_stack = torch.cat((transition_stack, transition.t().reshape(1, -1)), dim=0)
             print(f"Episode {eps} stored in experience memory")
-
         self.experience_memory = torch.cat((self.experience_memory, transition_stack), dim=0)
+        return torch.mean(rewards, dim=1)
 
     # Remove the transitions from the `num_episodes` oldest episodes in the experience memory
     def clear_experience_memory(self, num_episodes):
@@ -108,8 +113,10 @@ class DQNPendulum:
         print(f"{num_transitions} transitions removed from experience memory")
 
     # Perform GD using Pytorch on entire experience memory, and periodically copy policy net weights to target net
+    # return loss for each epoch
     def train_policy_net(self, num_epochs):
         optimizer = optim.SGD(self.policy_net.parameters(), lr=self.learning_rate, momentum=0.8)
+        epoch_losses = torch.zeros(num_epochs)
         for epoch in range(num_epochs):
             optimizer.zero_grad()
             action_indices = self.experience_memory[:, self.num_features]
@@ -123,27 +130,15 @@ class DQNPendulum:
             loss = loss_func(rewards + self.discount_factor * target_net_preds, policy_net_preds)
             loss.backward()
             optimizer.step()
+            epoch_losses[epoch] = loss.item()
             print('Epoch {} MSE loss is {}'.format(epoch+1, loss.item()))
 
             if (epoch % 10 == 9):
                 self.target_net.load_state_dict(self.policy_net.state_dict())
                 print("policy net weights copied to target net")
+        return epoch_losses
 
 
-
-env = InvertedPendulum(params={"length":1, "mass":1, "gravity":1, "damping":0.01},
-                       initial_state=[0.1,0.0],
-                       sim_timestep=0.005,
-                       control_timestep=0.05)
-p = DQNPendulum(env=env,
-                initial_state=[0.1,0.0],
-                epsilon=0.2,
-                discount_factor=0.98,
-                learning_rate=1e-3,
-                max_sim_time=10)
-p.sample_experience(num_episodes=50)
-p.train_policy_net(num_epochs=100)
-p.clear_experience_memory(num_episodes=50)
 
 def sample_trajectory(solver):
     env = solver.env
@@ -163,9 +158,49 @@ def sample_trajectory(solver):
         solver.state = next_state
     state_traj[0, :] = np.mod(state_traj[0], 2 * np.pi)
     return state_traj, action_traj
-st, at = sample_trajectory(p)
-st = np.array(st)
-at = np.array(at)
 
+# Initialize DQN object
+env = InvertedPendulum(params={"length":1, "mass":1, "gravity":1, "damping":0.01},
+                       initial_state=[0.1,0.0],
+                       sim_timestep=0.005,
+                       control_timestep=0.05)
+p = DQNPendulum(env=env,
+                initial_state=[0.1,0.0],
+                epsilon=0.2,
+                discount_factor=0.98,
+                learning_rate=1e-3,
+                max_sim_time=10)
 
-get_animation(st, at, filename="out/dqn_sample_traj_animation.mp4")
+# training
+avg_rewards = p.sample_experience(num_episodes=20)
+epoch_losses = p.train_policy_net(num_epochs=100)
+# p.clear_experience_memory(num_episodes=50)
+
+# get sample trajectory
+sample_state_traj, sample_action_traj = sample_trajectory(p)
+sample_state_traj = np.array(sample_state_traj)
+sample_action_traj = np.array(sample_action_traj)
+
+# make plots, create sample trajectory video
+num_episode = avg_rewards.shape[0]
+num_epoch = epoch_losses.shape[0]
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6), sharex=False)
+
+ax1.plot(range(num_episode), avg_rewards)
+ax1.set_title("Average reward per episode")
+ax1.set_xlabel("Episode")
+ax1.set_ylabel("Average reward")
+ax1.grid(True)
+
+ax2.plot(range(num_epoch), epoch_losses)
+ax2.set_title("Training loss per epoch")
+ax2.set_xlabel("Epoch")
+ax2.set_ylabel("MSE Loss")
+ax2.grid(True)
+
+plt.tight_layout()
+plt.savefig("out/DQN_rewards_losses.png")
+print("Rewards and losses figures saved to out/DQN_rewards_losses.png")
+
+get_animation(sample_state_traj, sample_action_traj, filename="out/dqn_sample_traj_animation.mp4")
