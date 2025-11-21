@@ -166,6 +166,6 @@ with open("true_value_samples.pkl", "rb") as file:
     true_value_samples = pickle.load(file)
 
 masks, errors = benchmark(solver, true_value_samples, res=21, t_res=7, x_min=0, x_max=2*np.pi, y_min=-3, y_max=3)
-argmin_error = np.argmin(errors[1:])
+argmin_error = np.nanargmin(errors)
 best_mask = masks[argmin_error, :]
 print(f"Best mask was {best_mask} with error {errors[argmin_error]}")
