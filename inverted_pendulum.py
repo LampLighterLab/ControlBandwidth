@@ -77,6 +77,9 @@ class InvertedPendulum:
     def state_feature_vector(self, s):
         pos = s[0]
         vel = s[1]
+
+        theta_tilde = np.arctan2(np.sin(pos - np.pi), np.cos(pos - np.pi))
+
         KE = 0.5 * self.params["mass"] * vel**2
         PE = (
             self.params["mass"]
@@ -84,7 +87,23 @@ class InvertedPendulum:
             * self.params["length"]
             * (1 - np.cos(pos))
         )
-        return np.array([np.cos(pos), np.sin(pos), vel, abs(vel), np.sign(vel), KE, PE])
+        E = KE + PE
+        E_ideal = self.get_energy([np.pi, 0])
+        energy_delta = (E - E_ideal) / E_ideal
+
+        return np.array(
+            [
+                np.sin(theta_tilde),
+                np.cos(theta_tilde),
+                theta_tilde,
+                theta_tilde**2,
+                vel,
+                vel**2,
+                theta_tilde * vel,
+                energy_delta,
+                energy_delta**2,
+            ]
+        )
 
     def action_feature_vector(self, a, s):
         # Testing removing m,g,l from calculation because it's the same up to a constant
