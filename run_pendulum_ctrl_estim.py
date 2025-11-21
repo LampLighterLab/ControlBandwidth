@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.colors
 import time
 from inverted_pendulum import InvertedPendulum
-from deep_q_net import DQNPendulum
+from control_method import QLearningPendulum
 from animation import get_animation
 from util import (
     sample,
@@ -252,10 +252,9 @@ def create_plots(
     plt.ylabel("vel")
     plt.savefig("out/policy.png")
 
+    print("plots saved to out/")
     # Get sample trajectory animation
     get_animation(states=state_traj, actions=action_traj)
-
-    plt.show()
 
 
 # Run Q learning and compare with ground truth value function
@@ -265,12 +264,13 @@ env = InvertedPendulum(
     sim_timestep=0.01,
     control_timestep=0.1,
 )
-solver = DQNPendulum(
+solver = QLearningPendulum(
     env=env,
     initial_state=[3.2, 0],
     epsilon=0.2,
     discount_factor=0.98,
-    learning_rate=1e-2,
+    learning_rate=1e-3,
+    max_sim_time=10
 )
 approx_weights, states = run_q_learning(solver=solver, num_episodes=100)
 true_value_samples = get_true_value_func_samples(
