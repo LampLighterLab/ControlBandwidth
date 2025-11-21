@@ -101,10 +101,23 @@ class InvertedPendulum:
                 vel**2,
                 a,
                 a**2,
+                E - E_ideal,
+                a * (E - E_ideal) ** 2,
+            ]
+        )
+        
+        '''
+        [
+                1,
+                np.cos(pos - np.pi),
+                np.sin(pos - np.pi),
+                vel,
+                vel**2,
+                a,
+                a**2,
                 a * np.cos(pos - np.pi),
                 a * np.sin(pos - np.pi),
                 E - E_ideal,
                 a * (E - E_ideal) ** 2,
                 (E - E_ideal) ** 2,
-            ]
-        )
+            ]'''

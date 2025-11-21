@@ -256,7 +256,7 @@ def create_plots(
     # Get sample trajectory animation
     get_animation(states=state_traj, actions=action_traj)
 
-
+'''
 # Run Q learning and compare with ground truth value function
 env = InvertedPendulum(
     params={"length": 1, "mass": 1, "gravity": 1, "damping": 0.01},
@@ -289,7 +289,7 @@ create_plots(
 )
 
 
-"""
+
 ls_weights = least_squares_fit(solver,
                                10,
                                x_min=0,
@@ -307,4 +307,4 @@ with open("ls_weights.pkl", "wb") as file:
 get_plot_least_squares(
     solver=solver, res=10, x_min=0, x_max=2 * np.pi, y_min=-4, y_max=4
 )
-"""
+'''
