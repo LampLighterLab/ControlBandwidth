@@ -35,6 +35,7 @@ class InvertedPendulum:
         return next_state
 
     def get_next_state(self, torque, state):
+        state = state.copy()
         for _ in range(int(self.control_timestep // self.sim_timestep)):
             state = self.integrate_rk4(state, torque, self.sim_timestep)
         return state
@@ -71,7 +72,7 @@ class InvertedPendulum:
         next_state = self.get_next_state(a, s)
         return self.get_reward(next_state)
 
-    def feature_vector(self, s):
+    def state_feature_vector(self, s):
         pos = s[0]
         vel = s[1]
         KE = 0.5 * self.params["mass"] * vel**2
@@ -81,7 +82,7 @@ class InvertedPendulum:
             * self.params["length"]
             * (1 - np.cos(pos))
         )
-        return np.array([np.cos(pos), np.sin(pos), vel, abs(vel), KE, PE, 1])
+        return np.array([np.cos(pos), np.sin(pos), vel, abs(vel), np.sign(vel), KE, PE])
 
     def action_feature_vector(self, a, s):
         # Testing removing m,g,l from calculation because it's the same up to a constant

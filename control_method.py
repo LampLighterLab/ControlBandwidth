@@ -1,8 +1,8 @@
-from environment import Actions
+from gridworld import Actions
 import numpy as np
 from numpy.linalg import LinAlgError
 import math
-from environment import Gridworld
+from gridworld import Gridworld
 from inverted_pendulum import InvertedPendulum
 
 

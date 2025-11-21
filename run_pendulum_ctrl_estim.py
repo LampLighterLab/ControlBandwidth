@@ -10,7 +10,9 @@ from util import (
     sample_trajectory,
     initialize_env_and_solver,
     get_plot_least_squares,
+    least_squares_fit,
 )
+import pickle
 
 
 # Run episodes of Q-learning control method, return weights of state-value-function approximation
@@ -250,15 +252,27 @@ def create_plots(
     plt.ylabel("vel")
     plt.savefig("out/policy.png")
 
+    print("plots saved to out/")
     # Get sample trajectory animation
     get_animation(states=state_traj, actions=action_traj)
 
-    plt.show()
-
 
 # Run Q learning and compare with ground truth value function
-solver = initialize_env_and_solver(sim_timestep=0.005, control_timestep=0.05)
-approx_weights, states = run_q_learning(solver, num_episodes=200)
+env = InvertedPendulum(
+    params={"length": 1, "mass": 1, "gravity": 1, "damping": 0.01},
+    initial_state=[3.2, 0],
+    sim_timestep=0.01,
+    control_timestep=0.1,
+)
+solver = QLearningPendulum(
+    env=env,
+    initial_state=[3.2, 0],
+    epsilon=0.2,
+    discount_factor=0.98,
+    learning_rate=1e-3,
+    max_sim_time=10
+)
+approx_weights, states = run_q_learning(solver=solver, num_episodes=100)
 true_value_samples = get_true_value_func_samples(
     solver=solver, res=10, pos_min=0, pos_max=2 * np.pi, vel_min=-4, vel_max=4
 )
@@ -274,7 +288,23 @@ create_plots(
     y_max=4,
 )
 
-# Find least squares fit to action-feature vector
+
+"""
+ls_weights = least_squares_fit(solver,
+                               10,
+                               x_min=0,
+                               x_max=2 * np.pi,
+                               y_min=-4,
+                               y_max=4,
+                               t_min = -1*solver.max_torque,
+                               t_max=solver.max_torque)
+
+with open("ls_weights.pkl", "wb") as file:
+    pickle.dump(ls_weights, file)
+    print("least squares weights saved")
+
+ Find least squares fit to action-feature vector
 get_plot_least_squares(
     solver=solver, res=10, x_min=0, x_max=2 * np.pi, y_min=-4, y_max=4
 )
+"""
