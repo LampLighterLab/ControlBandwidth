@@ -6,6 +6,8 @@ class InvertedPendulum:
 
     # params is a dict containing keys "mass", "length", "gravity"
     def __init__(self, params, initial_state, sim_timestep=0.01, control_timestep=0.1):
+        if "damping" not in params:
+            params = {**params, "damping": 0.0}
         self.params = params
         self.angular_pos = initial_state[0]
         # ! 0 is pointing straight down (passively stable equilibrium point), positive follows RHR!
@@ -105,19 +107,35 @@ class InvertedPendulum:
                 a * (E - E_ideal) ** 2,
             ]
         )
-        
-        '''
-        [
-                1,
-                np.cos(pos - np.pi),
-                np.sin(pos - np.pi),
-                vel,
-                vel**2,
-                a,
-                a**2,
-                a * np.cos(pos - np.pi),
-                a * np.sin(pos - np.pi),
-                E - E_ideal,
-                a * (E - E_ideal) ** 2,
-                (E - E_ideal) ** 2,
-            ]'''
+
+    # [
+    #                 1,
+    #                 np.cos(pos - np.pi),
+    #                 np.sin(pos - np.pi),
+    #                 vel,
+    #                 vel**2,
+    #                 a,
+    #                 a**2,
+    #                 a * np.cos(pos - np.pi),
+    #                 a * np.sin(pos - np.pi),
+    #                 E - E_ideal,
+    #                 a * (E - E_ideal) ** 2,
+    #                 (E - E_ideal) ** 2,
+    #             ]
+
+    def linearize(self, state, torque):
+        cos_theta = np.cos(state[0])
+
+        A = np.array(
+            [
+                [0.0, 1.0],
+                [
+                    -(self.params["gravity"] / self.params["length"]) * cos_theta,
+                    -self.params["damping"],
+                ],
+            ]
+        )
+        B = np.array(
+            [[0.0], [1.0 / (self.params["mass"] * self.params["length"] ** 2)]]
+        )
+        return A, B
