@@ -79,6 +79,8 @@ def sample_value_grid(
 def main():
     out_dir = Path("out")
     out_dir.mkdir(exist_ok=True)
+    data_dir = Path("data")
+    data_dir.mkdir(exist_ok=True)
 
     params = {"mass": 1.0, "length": 1.0, "gravity": 9.81, "damping": 0.05}
     equilibrium_state = np.array([math.pi, 0.0])
@@ -108,7 +110,7 @@ def main():
         max_sim_time=max_sim_time,
     )
 
-    save_path = out_dir / "lqr_value_ground_truth.npz"
+    save_path = data_dir / "lqr_value_ground_truth.npz"
     np.savez(
         save_path,
         params=params,

@@ -9,10 +9,13 @@ import numpy as np
 from inverted_pendulum import InvertedPendulum
 
 # Mask search options (constant feature index 0 is always on)
-MIN_ACTIVE_FEATURES = 7  # including the constant term
+MIN_ACTIVE_FEATURES = 1  # including the constant term
 CUSTOM_MASKS: list[tuple[int, ...]] = []  # optionally provide explicit masks
 TRAIN_FRACTION = 0.8
 RNG_SEED = 0
+MAX_MASKS = (
+    10  #: int | None = None  # set to limit number of masks evaluated/visualized
+)
 
 
 def load_ground_truth(path: Path):
@@ -69,6 +72,8 @@ def fit_and_evaluate(env, pos_range, vel_range, v_grid, masks, out_dir: Path):
     y = v_grid.reshape(-1)
     X_full = build_feature_matrix(env, pos_range, vel_range)
 
+    mask_list = [tuple(m) for m in masks]
+
     global_v_max = np.max(np.abs(v_grid))
     global_err_max = 0.0
 
@@ -86,7 +91,7 @@ def fit_and_evaluate(env, pos_range, vel_range, v_grid, masks, out_dir: Path):
     results = []
     weights_by_mask = {}
 
-    for mask in masks:
+    for mask in mask_list:
         mask_arr = np.array(mask, dtype=float)
         X_train_masked = X_train * mask_arr
         weights, _, _, _ = np.linalg.lstsq(X_train_masked, y_train, rcond=None)
@@ -113,11 +118,26 @@ def fit_and_evaluate(env, pos_range, vel_range, v_grid, masks, out_dir: Path):
 
     results = sorted(results, key=lambda e: e["error"])
     best = results[0]
+    worst = results[-1]
     print(f"Best mask {best['mask']} with test error {best['error']:.4f}")
 
     plot_true_value(v_grid, pos_range, vel_range, out_dir, global_v_max)
 
-    for entry in results:
+    if MAX_MASKS is None or len(results) <= MAX_MASKS:
+        to_plot = results
+    else:
+        to_plot = []
+        if best not in to_plot:
+            to_plot.append(best)
+        for entry in results[1:]:
+            if len(to_plot) >= max(1, MAX_MASKS - 1):
+                break
+            if entry is not worst:
+                to_plot.append(entry)
+        if worst not in to_plot:
+            to_plot.append(worst)
+
+    for entry in to_plot:
         plot_mask_results(
             approx_v=entry["approx_v"],
             error_map=entry["error_map"],
@@ -227,7 +247,7 @@ def main():
     out_dir = Path("out")
     out_dir.mkdir(exist_ok=True)
 
-    data_path = out_dir / "lqr_value_ground_truth.npz"
+    data_path = Path("data") / "lqr_value_ground_truth.npz"
     (
         params,
         equilibrium_state,

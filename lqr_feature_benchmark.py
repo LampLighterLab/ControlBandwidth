@@ -18,6 +18,7 @@ CUSTOM_MASKS: list[
 ] = []  # optionally provide explicit masks instead of enumerating
 TRAIN_FRACTION = 0.8
 RNG_SEED = 0
+MAX_MASKS: int | None = None  # set to an int to limit evaluation to a random subset
 
 
 def load_ground_truth(path: Path):
@@ -91,7 +92,9 @@ def fit_and_evaluate(env, pos_range, vel_range, torque_range, q, masks, out_dir:
     global_q_max = np.max(np.abs(true_max))
     global_err_max = 0.0
 
-    for mask in masks:
+    mask_list = [tuple(m) for m in masks]
+
+    for mask in mask_list:
         mask_arr = np.array(mask, dtype=float)
         X_train_masked = X_train * mask_arr
         weights, _, _, _ = np.linalg.lstsq(X_train_masked, y_train, rcond=None)
@@ -119,11 +122,28 @@ def fit_and_evaluate(env, pos_range, vel_range, torque_range, q, masks, out_dir:
 
     results = sorted(results, key=lambda e: e["error"])
     best = results[0]
+    worst = results[-1]
     print(f"Best mask {best['mask']} with test error {best['error']:.4f}")
 
     plot_true_max_q(true_max, pos_range, vel_range, out_dir, global_q_max)
 
-    for entry in results:
+    # Decide which masks to plot
+    if MAX_MASKS is None or len(results) <= MAX_MASKS:
+        to_plot = results
+    else:
+        to_plot = []
+        if best not in to_plot:
+            to_plot.append(best)
+        # fill with next best until near cap, leaving room for worst if distinct
+        for entry in results[1:]:
+            if len(to_plot) >= max(1, MAX_MASKS - 1):
+                break
+            if entry is not worst:
+                to_plot.append(entry)
+        if worst not in to_plot:
+            to_plot.append(worst)
+
+    for entry in to_plot:
         plot_mask_results(
             approx_max=entry["approx_max"],
             error_map=entry["error_map"],
@@ -232,7 +252,7 @@ def main():
     out_dir = Path("out")
     out_dir.mkdir(exist_ok=True)
 
-    data_path = out_dir / "lqr_ground_truth.npz"
+    data_path = Path("data") / "lqr_ground_truth.npz"
     (
         params,
         equilibrium_state,
