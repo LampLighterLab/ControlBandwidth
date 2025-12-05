@@ -2,5 +2,6 @@
 *.pyo
 *.mp4
 *.pkl
+*.nkz
 profile.out
 out/

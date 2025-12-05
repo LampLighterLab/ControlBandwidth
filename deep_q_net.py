@@ -52,7 +52,7 @@ class DQNPendulum:
         self.max_sim_time = max_sim_time
 
         self.max_torque = (
-            1.0  # 1 means the pendulum is just able to hold itself up when parallel to ground
+            0.5  # 1 means the pendulum is just able to hold itself up when parallel to ground
             * self.env.params["mass"]
             * self.env.params["gravity"]
             * self.env.params["length"]
@@ -94,7 +94,7 @@ class DQNPendulum:
         rewards = torch.zeros((num_episodes, num_timesteps))
         for eps in range(num_episodes):
             # Reset states
-            curr_state = torch.tensor(self.initial_state)
+            curr_state = torch.tensor(self.initial_state + 0.5 * np.random.random(2), dtype=torch.float32)
             next_state = torch.tensor(self.initial_state)
             for timestep in range(num_timesteps):
                 action_index = self.get_epsilon_greedy_action(
@@ -211,13 +211,13 @@ p = DQNPendulum(
     initial_state=[0.1, 0.0],
     epsilon=0.2,
     discount_factor=0.98,
-    learning_rate=1e-3,
+    learning_rate=1e-7,
     max_sim_time=10,
 )
 
 # training
 avg_rewards = p.sample_experience(num_episodes=20)
-epoch_losses = p.train_policy_net(num_epochs=100)
+epoch_losses = p.train_policy_net(num_epochs=200)
 # p.clear_experience_memory(num_episodes=50)
 
 # get sample trajectory

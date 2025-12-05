@@ -99,9 +99,11 @@ class InvertedPendulum:
                 theta_tilde**2,
                 vel,
                 vel**2,
-                theta_tilde * vel,
                 energy_delta,
-                energy_delta**2,
+                np.sign(energy_delta),
+                np.sign(0.5*E_ideal - E),
+                #np.sign(theta_tilde * vel),
+                np.sign(energy_delta * theta_tilde * vel),
             ]
         )
 
